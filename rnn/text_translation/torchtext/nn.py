@@ -1,19 +1,18 @@
 import random
+
+from numpy.core.defchararray import decode
+from rnn.text_translation.torchtext.all import DEC_HID_DIM 
 from typing import Tuple
 
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch import Tensor
 
-
 class Encoder(nn.Module):
-    def __init__(self,
-                 input_dim: int,
-                 emb_dim: int,
-                 enc_hid_dim: int,
-                 dec_hid_dim: int,
-                 dropout: float):
+    def __init__(self, input_dim: int, emb_dim: int, enc_hid_dim: int, dec_hid_dim: int, dropout:float):
+        """ Initializes all encoder params """
         super().__init__()
 
         self.input_dim = input_dim
@@ -21,64 +20,45 @@ class Encoder(nn.Module):
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
         self.dropout = dropout
-
+        
+        # Q: What is all of this
         self.embedding = nn.Embedding(input_dim, emb_dim)
-
         self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True)
-
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
-
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self,
-                src: Tensor) -> Tuple[Tensor]:
-
+    def forward(self, src: Tensor) -> Tuple[Tensor]:
+        """ Forward pass for NN encoder """
         embedded = self.dropout(self.embedding(src))
-
         outputs, hidden = self.rnn(embedded)
-
         hidden = torch.tanh(self.fc(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1)))
-
         return outputs, hidden
 
-
 class Attention(nn.Module):
-    def __init__(self,
-                 enc_hid_dim: int,
-                 dec_hid_dim: int,
-                 attn_dim: int):
+    def __init__(self, enc_hid_dim: int, dec_hid_dim: int, attn_dim: int):
         super().__init__()
 
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
+        self.attn_in = (enc_hid_dim*2) + dec_hid_dim
+        self.attn = nn.Linear(self.attn_in, attn_dim) # (input_feature, output_feature)
 
-        self.attn_in = (enc_hid_dim * 2) + dec_hid_dim
-
-        self.attn = nn.Linear(self.attn_in, attn_dim)
-
-    def forward(self,
-                decoder_hidden: Tensor,
-                encoder_outputs: Tensor) -> Tensor:
-
+    def forward(self, decoder_hidden: Tensor, encoder_outputs: Tensor)->Tensor:
+        """ Forward pass of attention layers """
         src_len = encoder_outputs.shape[0]
+        print(f"Testing {src_len}")
+        repeated_decoder_hidden = decoder_hidden.unsqueeze(1).repeat(1, src_len, 1) # Q: What is unsqueeze do
+        
+        encoder_outputs = encoder_outputs.permute(1,0,2) # Q: what is permute
+        
+        energy = torch.tanh(self.attn(torch.cat((repeated_decoder_hidden, encoder_outputs), dim=2)))
 
-        repeated_decoder_hidden = decoder_hidden.unsqueeze(1).repeat(1, src_len, 1)
-
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
-
-        energy = torch.tanh(self.attn(torch.cat((
-            repeated_decoder_hidden,
-            encoder_outputs),
-            dim = 2)))
-
-        attention = torch.sum(energy, dim=2)
+        attention = torch.sum(energy, dim = 2)
 
         return F.softmax(attention, dim=1)
 
-
 class Decoder(nn.Module):
-    def __init__(self,
-                 output_dim: int,
+    def __init__(self, output_dim: int,
                  emb_dim: int,
                  enc_hid_dim: int,
                  dec_hid_dim: int,
@@ -118,7 +98,7 @@ class Decoder(nn.Module):
 
         return weighted_encoder_rep
 
-
+    
     def forward(self,
                 input: Tensor,
                 decoder_hidden: Tensor,
@@ -144,7 +124,6 @@ class Decoder(nn.Module):
                                      embedded), dim = 1))
 
         return output, decoder_hidden.squeeze(0)
-
 
 class Seq2Seq(nn.Module):
     def __init__(self,
@@ -182,7 +161,8 @@ class Seq2Seq(nn.Module):
 
         return outputs
 
-
+from torchtext.data_preprocessing import de_vocab, en_vocab
+from torchtext.data_loader import device
 INPUT_DIM = len(de_vocab)
 OUTPUT_DIM = len(en_vocab)
 # ENC_EMB_DIM = 256
@@ -228,3 +208,5 @@ def count_parameters(model: nn.Module):
 
 
 print(f'The model has {count_parameters(model):,} trainable parameters')
+
+    

@@ -1,9 +1,14 @@
-
 import math
 import time
+import torch
+import torch.nn as nn
+import torch.optim as optim 
+from rnn.text_translation.torchtext.data_loader import device
+from torchtext.nn import model, optimizer
+from rnn.text_translation.torchtext.data_loader import train_iter, valid_iter, test_iter
+from rnn.text_translation.torchtext.data_preprocessing import en_vocab
 
 PAD_IDX = en_vocab.stoi['<pad>']
-
 criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
 def train(model: nn.Module,
@@ -75,26 +80,27 @@ def epoch_time(start_time: int,
 N_EPOCHS = 10
 CLIP = 1
 
-best_valid_loss = float('inf')
 
-for epoch in range(N_EPOCHS):
 
-    start_time = time.time()
+def main():
+    best_valid_loss = float('inf')
 
-    train_loss = train(model, train_iter, optimizer, criterion, CLIP)
-    valid_loss = evaluate(model, valid_iter, criterion)
+    for epoch in range(N_EPOCHS):
 
-    end_time = time.time()
+        start_time = time.time()
 
-    epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+        train_loss = train(model, train_iter, optimizer, criterion, CLIP)
+        valid_loss = evaluate(model, valid_iter, criterion)
 
-    print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-    print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+        end_time = time.time()
 
-test_loss = evaluate(model, test_iter, criterion)
+        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
+        print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
+        print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
+        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
-if __name__ == "__main__":
-    train()
+    test_loss = evaluate(model, test_iter, criterion)
+
+    print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
+
