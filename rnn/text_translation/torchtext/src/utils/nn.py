@@ -1,7 +1,6 @@
 import random
 
 from numpy.core.defchararray import decode
-from rnn.text_translation.torchtext.all import DEC_HID_DIM 
 from typing import Tuple
 
 import torch
@@ -10,8 +9,16 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch import Tensor
 
+
 class Encoder(nn.Module):
-    def __init__(self, input_dim: int, emb_dim: int, enc_hid_dim: int, dec_hid_dim: int, dropout:float):
+    def __init__(
+        self,
+        input_dim: int,
+        emb_dim: int,
+        enc_hid_dim: int,
+        dec_hid_dim: int,
+        dropout: float,
+    ):
         """ Initializes all encoder params """
         super().__init__()
 
@@ -20,10 +27,10 @@ class Encoder(nn.Module):
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
         self.dropout = dropout
-        
+
         # Q: What is all of this
         self.embedding = nn.Embedding(input_dim, emb_dim)
-        self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True)
+        self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional=True)
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
         self.dropout = nn.Dropout(dropout)
 
@@ -31,8 +38,11 @@ class Encoder(nn.Module):
         """ Forward pass for NN encoder """
         embedded = self.dropout(self.embedding(src))
         outputs, hidden = self.rnn(embedded)
-        hidden = torch.tanh(self.fc(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1)))
+        hidden = torch.tanh(
+            self.fc(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
+        )
         return outputs, hidden
+
 
 class Attention(nn.Module):
     def __init__(self, enc_hid_dim: int, dec_hid_dim: int, attn_dim: int):
@@ -40,30 +50,38 @@ class Attention(nn.Module):
 
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
-        self.attn_in = (enc_hid_dim*2) + dec_hid_dim
-        self.attn = nn.Linear(self.attn_in, attn_dim) # (input_feature, output_feature)
+        self.attn_in = (enc_hid_dim * 2) + dec_hid_dim
+        self.attn = nn.Linear(self.attn_in, attn_dim)  # (input_feature, output_feature)
 
-    def forward(self, decoder_hidden: Tensor, encoder_outputs: Tensor)->Tensor:
+    def forward(self, decoder_hidden: Tensor, encoder_outputs: Tensor) -> Tensor:
         """ Forward pass of attention layers """
         src_len = encoder_outputs.shape[0]
-        print(f"Testing {src_len}")
-        repeated_decoder_hidden = decoder_hidden.unsqueeze(1).repeat(1, src_len, 1) # Q: What is unsqueeze do
-        
-        encoder_outputs = encoder_outputs.permute(1,0,2) # Q: what is permute
-        
-        energy = torch.tanh(self.attn(torch.cat((repeated_decoder_hidden, encoder_outputs), dim=2)))
+        # print(f"Testing {src_len}")
+        repeated_decoder_hidden = decoder_hidden.unsqueeze(1).repeat(
+            1, src_len, 1
+        )  # Q: What is unsqueeze do
 
-        attention = torch.sum(energy, dim = 2)
+        encoder_outputs = encoder_outputs.permute(1, 0, 2)  # Q: what is permute
+
+        energy = torch.tanh(
+            self.attn(torch.cat((repeated_decoder_hidden, encoder_outputs), dim=2))
+        )
+
+        attention = torch.sum(energy, dim=2)
 
         return F.softmax(attention, dim=1)
 
+
 class Decoder(nn.Module):
-    def __init__(self, output_dim: int,
-                 emb_dim: int,
-                 enc_hid_dim: int,
-                 dec_hid_dim: int,
-                 dropout: int,
-                 attention: nn.Module):
+    def __init__(
+        self,
+        output_dim: int,
+        emb_dim: int,
+        enc_hid_dim: int,
+        dec_hid_dim: int,
+        dropout: int,
+        attention: nn.Module,
+    ):
         super().__init__()
 
         self.emb_dim = emb_dim
@@ -81,10 +99,9 @@ class Decoder(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-
-    def _weighted_encoder_rep(self,
-                              decoder_hidden: Tensor,
-                              encoder_outputs: Tensor) -> Tensor:
+    def _weighted_encoder_rep(
+        self, decoder_hidden: Tensor, encoder_outputs: Tensor
+    ) -> Tensor:
 
         a = self.attention(decoder_hidden, encoder_outputs)
 
@@ -98,20 +115,19 @@ class Decoder(nn.Module):
 
         return weighted_encoder_rep
 
-    
-    def forward(self,
-                input: Tensor,
-                decoder_hidden: Tensor,
-                encoder_outputs: Tensor) -> Tuple[Tensor]:
+    def forward(
+        self, input: Tensor, decoder_hidden: Tensor, encoder_outputs: Tensor
+    ) -> Tuple[Tensor]:
 
         input = input.unsqueeze(0)
 
         embedded = self.dropout(self.embedding(input))
 
-        weighted_encoder_rep = self._weighted_encoder_rep(decoder_hidden,
-                                                          encoder_outputs)
+        weighted_encoder_rep = self._weighted_encoder_rep(
+            decoder_hidden, encoder_outputs
+        )
 
-        rnn_input = torch.cat((embedded, weighted_encoder_rep), dim = 2)
+        rnn_input = torch.cat((embedded, weighted_encoder_rep), dim=2)
 
         output, decoder_hidden = self.rnn(rnn_input, decoder_hidden.unsqueeze(0))
 
@@ -119,27 +135,22 @@ class Decoder(nn.Module):
         output = output.squeeze(0)
         weighted_encoder_rep = weighted_encoder_rep.squeeze(0)
 
-        output = self.out(torch.cat((output,
-                                     weighted_encoder_rep,
-                                     embedded), dim = 1))
+        output = self.out(torch.cat((output, weighted_encoder_rep, embedded), dim=1))
 
         return output, decoder_hidden.squeeze(0)
 
+
 class Seq2Seq(nn.Module):
-    def __init__(self,
-                 encoder: nn.Module,
-                 decoder: nn.Module,
-                 device: torch.device):
+    def __init__(self, encoder: nn.Module, decoder: nn.Module, device: torch.device):
         super().__init__()
 
         self.encoder = encoder
         self.decoder = decoder
         self.device = device
 
-    def forward(self,
-                src: Tensor,
-                trg: Tensor,
-                teacher_forcing_ratio: float = 0.5) -> Tensor:
+    def forward(
+        self, src: Tensor, trg: Tensor, teacher_forcing_ratio: float = 0.5
+    ) -> Tensor:
 
         batch_size = src.shape[1]
         max_len = trg.shape[0]
@@ -150,19 +161,21 @@ class Seq2Seq(nn.Module):
         encoder_outputs, hidden = self.encoder(src)
 
         # first input to the decoder is the <sos> token
-        output = trg[0,:]
+        output = trg[0, :]
 
         for t in range(1, max_len):
             output, hidden = self.decoder(output, hidden, encoder_outputs)
             outputs[t] = output
             teacher_force = random.random() < teacher_forcing_ratio
             top1 = output.max(1)[1]
-            output = (trg[t] if teacher_force else top1)
+            output = trg[t] if teacher_force else top1
 
         return outputs
 
-from torchtext.data_preprocessing import de_vocab, en_vocab
-from torchtext.data_loader import device
+
+from utils.data_preprocessing import de_vocab, en_vocab
+from utils.data_loader import device
+
 INPUT_DIM = len(de_vocab)
 OUTPUT_DIM = len(en_vocab)
 # ENC_EMB_DIM = 256
@@ -192,7 +205,7 @@ model = Seq2Seq(enc, dec, device).to(device)
 
 def init_weights(m: nn.Module):
     for name, param in m.named_parameters():
-        if 'weight' in name:
+        if "weight" in name:
             nn.init.normal_(param.data, mean=0, std=0.01)
         else:
             nn.init.constant_(param.data, 0)
@@ -207,6 +220,4 @@ def count_parameters(model: nn.Module):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-print(f'The model has {count_parameters(model):,} trainable parameters')
-
-    
+print(f"The model has {count_parameters(model):,} trainable parameters")
