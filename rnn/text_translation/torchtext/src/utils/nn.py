@@ -154,6 +154,8 @@ class Seq2Seq(nn.Module):
 
         batch_size = src.shape[1]
         max_len = trg.shape[0]
+        
+        print(src.shape)
         trg_vocab_size = self.decoder.output_dim
 
         outputs = torch.zeros(max_len, batch_size, trg_vocab_size).to(self.device)
@@ -164,6 +166,8 @@ class Seq2Seq(nn.Module):
         output = trg[0, :]
 
         for t in range(1, max_len):
+            print(f"TESTING nn torchtext 1 output {output.shape}")
+
             output, hidden = self.decoder(output, hidden, encoder_outputs)
             outputs[t] = output
             teacher_force = random.random() < teacher_forcing_ratio

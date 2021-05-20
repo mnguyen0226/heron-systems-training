@@ -11,7 +11,7 @@ from utils.data_loader import train_iter, valid_iter, test_iter
 from utils.data_preprocessing import en_vocab
 
 PAD_IDX = en_vocab.stoi["<pad>"]
-criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX) # loss function
 
 
 def train(
@@ -22,15 +22,17 @@ def train(
     clip: float,
 ):
 
-    model.train()
+    model.train() # train model
 
     epoch_loss = 0
 
     for _, (src, trg) in enumerate(iterator):
-        src, trg = src.to(device), trg.to(device)
+        print(f"TESTING src main {src.shape}")
+        print(f"TESTING trg main {trg.shape}")
+        src, trg = src.to(device), trg.to(device) # calculation and ground truth
 
         optimizer.zero_grad()
-
+        
         output = model(src, trg)
 
         output = output[1:].view(-1, output.shape[-1])
@@ -38,6 +40,7 @@ def train(
 
         loss = criterion(output, trg)
 
+        # Back propagation
         loss.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
