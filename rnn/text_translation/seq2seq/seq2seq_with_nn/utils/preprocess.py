@@ -93,6 +93,7 @@ BATCH_SIZE = 128
 # these can be iterated on to return a batch of data which will have a src attribute 
 # bucketIterator is better than iterator because it can minimizes the amount of padding in both the source and target sentences
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits((train_data, valid_data, test_data), batch_size=BATCH_SIZE, device=device)
+# print(f"Testing {train_iterator}")
 
 def test_preprocess():
     """ Tests file """
