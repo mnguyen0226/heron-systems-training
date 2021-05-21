@@ -1,8 +1,7 @@
-import seq2seq_with_nn
 
-from seq2seq_with_nn.main import *
-from seq2seq_with_nn.utils.nn_model import *
-from seq2seq_with_nn.utils.preprocess import *
+from main import *
+from utils.nn_model import *
+from utils.preprocess import *
 
 def test_model():
     print("Test Trained & Validated Model")
