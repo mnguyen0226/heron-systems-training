@@ -2,7 +2,6 @@
 About: Preprocess with pytorch and Spacy
 """
 
-import seq2seq_with_nn
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -37,27 +36,27 @@ e.g. "good morning!" becomes ["good", "morning", "!"].
 SpaCy:
 - spacy has mode for each languae which need to be loaded so we can access the tokenizer of each model
 """
-tokenize_de = get_tokenizer("spacy", language="de")
-tokenize_en = get_tokenizer("spacy", language="en")
+# tokenize_de = get_tokenizer("spacy", language="de")
+# tokenize_en = get_tokenizer("spacy", language="en")
 
-# spacy_de = spacy.load('de_core_news_sm')
-# spacy_en = spacy.load('en_core_news_sm')
+spacy_de = spacy.load('de_core_news_sm')
+spacy_en = spacy.load('en_core_web_sm')
 
 # create a tokenizer function which is passed to torchtext and will take in the sentence as a string and reutnr the sentence as a list of tokens
-# def tokenize_de(text):
-#     """ Tokenize German text from a string into list of token and reverse it """
-#     arr = []
-#     for tok in spacy_de.tokenizer(text):
-#         arr.append(tok.text)
-#     return arr[::-1]
+def tokenize_de(text):
+    """ Tokenize German text from a string into list of token and reverse it """
+    arr = []
+    for tok in spacy_de.tokenizer(text):
+        arr.append(tok.text)
+    return arr[::-1]
 
-# def tokenize_en(text):
-#     """ Tokenizes English text from a string into list of token and reverse it """
-#     # arr = []
-#     # for tok in spacy_en.tokenizer(text):
-#     #     arr.append(tok.text)
-#     # return arr[::-1]
-#     return [tok.text for tok in spacy_en.tokenizer(text)]
+def tokenize_en(text):
+    """ Tokenizes English text from a string into list of token and reverse it """
+    # arr = []
+    # for tok in spacy_en.tokenizer(text):
+    #     arr.append(tok.text)
+    # return arr[::-1]
+    return [tok.text for tok in spacy_en.tokenizer(text)]
 
 # set the tokenized are guments to the correct tokenization function for each, with German being source filed and english being the target field.
 # the field also appends the start of sequence and end of sequence tokens via init_token and eos_token argument, and converts all words to lowercase
@@ -93,7 +92,7 @@ BATCH_SIZE = 128
 
 # these can be iterated on to return a batch of data which will have a src attribute 
 # bucketIterator is better than iterator because it can minimizes the amount of padding in both the source and target sentences
-train_iterator, valid_iterator, test_iterator = BucketIterator.splits((train_data, valid_data, test_data), batch_sizes=BATCH_SIZE, device=device)
+train_iterator, valid_iterator, test_iterator = BucketIterator.splits((train_data, valid_data, test_data), batch_size=BATCH_SIZE, device=device)
 
 def test_preprocess():
     """ Tests file """

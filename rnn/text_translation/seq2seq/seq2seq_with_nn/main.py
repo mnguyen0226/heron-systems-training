@@ -38,9 +38,8 @@ Teacher Forcing = method for quickly and efficiently trainig RNN mdoel that use 
 
 import torch
 import torch.nn as nn
-import seq2seq_with_nn
-from seq2seq_with_nn.utils.preprocess import *
-from seq2seq_with_nn.utils.nn_model import *
+from utils.preprocess import *
+from utils.nn_model import *
 import time
 
 #NEED: model, optimizer, loss function, training loop
@@ -62,7 +61,7 @@ model = Seq2Seq(encoder=enc, decoder=dec, device=device).to(device)
 
 # initialize the weight for the model: uniform distribution between -0.08 and +0.08
 def init_weights(m):
-    for name, param in m.name_parameters():
+    for name, param in m.named_parameters():
         nn.init.uniform_(param.data, -0.08, 0.08)
 
 model.apply(init_weights) # apply called, then init_weights function will be called every module and sub-module within outmodel
@@ -168,16 +167,17 @@ def epoch_time(start_time, end_time):
 # check if our model has achieved best validation loss so far, if it has, we will update out best validation loss and save the parm to our model (State_dict)
 # then test model with saved param
 
-N_EPOCHS = 10
-CLIP = 1
-best_valid_loss = float('inf')
-
 # Note that the model is super() so it use the same model
 def main():
+
+    N_EPOCHS = 10
+    CLIP = 1
+    best_valid_loss = float('inf')
+    
     print("Running")
     for epoch in range(N_EPOCHS):
         start_time = time.time()
-        train_loss = train(model, train_iterator=train_iterator, optimizer=optimizer, criterion=criterion, clip=CLIP)
+        train_loss = train(model=model, iterator=train_iterator, optimizer=optimizer, criterion=criterion, clip=CLIP)
         valid_loss = evaluate(model, valid_iterator, criterion=criterion)
         end_time = time.time()
 

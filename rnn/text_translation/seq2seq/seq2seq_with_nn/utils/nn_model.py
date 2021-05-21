@@ -54,10 +54,10 @@ During each iteration of the loop, we:
         if we don't, the next input is the predicted next token in the sequence, $\hat{y}_{t+1}$/top1, which we get by doing an argmax over the output tensor
 
 """
-import seq2seq_with_nn
 import torch
 from torch import random
 import torch.nn as nn
+import random
 
 class Encoder(nn.Module):
     def __init__(self, input_dim, emb_dim, hid_dim, n_layers, dropout):
@@ -161,7 +161,7 @@ class Seq2Seq(nn.Module):
             outputs[t] = output
 
             # decide the teaer forsing
-            teacher_force = random.ramdom() < teacher_forcing_ratio
+            teacher_force = random.random() < teacher_forcing_ratio
 
             # get the highest predicted token from out predictions
             top1 = output.argmax(1)
