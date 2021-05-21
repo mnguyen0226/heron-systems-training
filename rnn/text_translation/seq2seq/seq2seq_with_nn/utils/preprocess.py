@@ -2,7 +2,7 @@
 About: Preprocess with pytorch and Spacy
 """
 
-from threading import main_thread
+import seq2seq_with_nn
 import torch
 import torch.nn as nn
 import torch.optim as optim
