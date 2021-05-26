@@ -1,0 +1,13 @@
+Resources:
+- Attention and Augmented RNN Explain: https://distill.pub/2016/augmented-rnns/
+- Illustration on Transformer: https://jalammar.github.io/illustrated-transformer/
+- Code from Harvard: http://nlp.seas.harvard.edu/2018/04/03/attention.html
+- Attention is All You Need Tutorial: https://github.com/bentrevett/pytorch-seq2seq/blob/master/6%20-%20Attention%20is%20All%20You%20Need.ipynb
+---------------------------------------------------------------------------
+Terms:
+- Attention distribution = how we spread out the amount we care about different memory position
+    The result of the read operaton is a weighted sum
+    Q: How do we learn the weight?
+
+Neural Turning Machine:
+- How does 
