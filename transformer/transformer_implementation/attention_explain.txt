@@ -3,6 +3,8 @@ Resources:
 - Illustration on Transformer: https://jalammar.github.io/illustrated-transformer/
 - Code from Harvard: http://nlp.seas.harvard.edu/2018/04/03/attention.html
 - Attention is All You Need Tutorial: https://github.com/bentrevett/pytorch-seq2seq/blob/master/6%20-%20Attention%20is%20All%20You%20Need.ipynb
+- Visualizing an NMT model (Mechanics of SeqSeq Models with Attention): https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/
+
 ---------------------------------------------------------------------------
 Terms:
 - Attention distribution = how we spread out the amount we care about different memory position
@@ -10,4 +12,21 @@ Terms:
     Q: How do we learn the weight?
 
 Neural Turning Machine:
-- How does 
+- How does NTM decide which positions in memory to focus their attention on?
+    + content-based attention: search thru the memory of NTM and focus on places that match what they are loking for
+    + location-based attention: allow relative movement in memory, enable the NTM to loop
+
+Attention Interface:
+- Traditional Seq2Seq model has to boil the entire inpt down into a single vector and then expands it back out
+- Attentin avoids this by allowing the RNN processing the input to pass along info about each word it see, then the RNN generating the output to focus on words as they become relevant
+
+Why Attention?
+- The context vector turned out to be a bottleneck for these types of model. It made it challenging for the models to deal with long sentences
+- Attention allows the model to focus on relevant parts of the input sequence as needed
+
+What're the difference between attention and non-attention model?
+- Attentionally, encoder passes a lot more data to the deocder: Instead of passing the last hidden state of the encoding state, the encoder passes all the hidden states to the decoder
+- The attention decoder does an extra step before producing its output. In order to focus on the parts of the input that are relevant to this decoding time step, the decoder will
+    1. Look at the set of encoder hidden states it received, each encoder hidden state is most assocuate with the certain word in the input sentences
+    2. Give each hidden state a score - explain later
+    3. Multiply each hidden state by its softmaxed score, thus amplifying hidden states with high scores and drowning out hidden state with low scores
