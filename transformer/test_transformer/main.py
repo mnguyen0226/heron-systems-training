@@ -1,3 +1,5 @@
+from utils.preprocess import * 
+from utils.model import * 
 def run_main():
     print("Running main.py")
 
