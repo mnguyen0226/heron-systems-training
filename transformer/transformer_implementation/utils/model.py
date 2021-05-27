@@ -34,43 +34,7 @@ ENCODER:
     + The token and positional embedding are elementwise summed together to get a vector which contains info about the tokens and also its position with in the sequence
     + the combined embeddings are then passed thru N encoder layers to get Z, which is then output and can be used by decoder 
 """
-class Encoder(nn.Module):
-    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
-        super().__init__()
-        self.device = device
-        self.tok_embedding = nn.Embedding(input_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, hid_dim)
-        
-        self.layers = nn.ModuleList([EncoderLayer(hid_dim, 
-                                                        n_heads, 
-                                                        pf_dim,
-                                                        dropout, 
-                                                        device) 
-                                            for _ in range(n_layers)])
-        self.dropout = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
-    def forward(self, src, src_mask):        
-        #src = [batch size, src len]
-        #src_mask = [batch size, 1, 1, src len]
-        
-        batch_size = src.shape[0]
-        src_len = src.shape[1]
-        
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-        
-        #pos = [batch size, src len]
-        
-        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
-        
-        #src = [batch size, src len, hid dim]
-        
-        for layer in self.layers:
-            src = layer(src, src_mask)
-            
-        #src = [batch size, src len, hid dim]
-            
-        return src
 
 """
 ENCODER LAYER:
@@ -79,6 +43,37 @@ ENCODER LAYER:
 - The muti-head attention layer is used by encoder layer to attend to the source sentence meaning that it calculate and applies attention over itself instead of another sequence, hence we call it self-attention
 
 """
+class Encoder(nn.Module):
+    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
+        super().__init__()
+        self.device = device 
+        self.tok_embedding = nn.Embedding(input_dim, hid_dim) # input, output
+        self.pos_embedding = nn.Embedding(max_length, hid_dim) # input, output
+
+        # this is submodule that can be repeat 6 times
+        self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
+        self.dropout = nn.Dropout(dropout)
+        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+
+    def forward(self, src, src_mask):
+        # src = [batch_size, src_len]
+        # src_mask = [batch_size, 1,1, src_len]
+
+        batch_size = src.shape[0]
+        src_len = src.shape[1]
+
+        # positional vector
+        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+
+        # pos = [batch_size, src_len]
+        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
+
+        # src = [batch_size, src_len, hid_dim]
+        for layer in self.layers:
+            src = layer(src, src_mask)
+        # src = [batch_size, src_len, hid_dim]
+
+        return src
 
 def model():
     print("Runnning Model")
