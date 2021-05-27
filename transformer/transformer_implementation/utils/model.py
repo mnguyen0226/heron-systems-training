@@ -114,6 +114,86 @@ class EncoderLayer(nn.Module):
 
         return src
 
+"""
+MULTI HEAD ATTENTION LAYER
+- Attention can be through as queries, keys, and values 
+    + Query is used with the key to get the attention vector (usually the output of the softmax operation and has all values between 0 and 1 which sum to 1) 
+        which is then used to get the weighted sum of the values
+    + d_k help scale the dot product attention which is used to stop the results of the dot products growing large, causing the gradients to become too small
+    + The scaled dot-product. Instead of doing a sigle attention application, the hid_dim split into h heads and the scaled dotproduct attentin is calculated over all heads in parallel.
+        This means instead of paying attention to 1 concep per attention application, we pay attention to h.
+    + Recombine the heads into their hid_dim shape, thus each hid_dim is potentially paying attentoion to h dif conceps
+"""
+class MultiHeadAttentionLayer(nn.Module):
+    def __init__(self, hid_dim, n_heads, dropout, device):
+        super().__init__()
+
+        assert hid_dim % n_heads == 0 # make sure that multi head is concatenatable
+
+        self.hid_dim = hid_dim
+        self.n_heads = n_heads
+        self.head_dim = hid_dim // n_heads
+
+        self.fc_q = nn.Linear(hid_dim, hid_dim)
+        self.fc_k = nn.Linear(hid_dim, hid_dim)
+        self.fc_v = nn.Linear(hid_dim, hid_dim)
+
+        self.fc_o = nn.Linear(hid_dim, hid_dim)
+
+        self.dropout = nn.Dropout(dropout)
+        self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(device) # d_k
+
+    def forward(self, query, key, value, mask = None):
+        batch_size = query.shape[0]
+
+        #query = [batch size, query len, hid dim]
+        #key = [batch size, key len, hid dim]
+        #value = [batch size, value len, hid dim]
+                
+        Q = self.fc_q(query)
+        K = self.fc_k(key)
+        V = self.fc_v(value)
+
+        #Q = [batch size, query len, hid dim]
+        #K = [batch size, key len, hid dim]
+        #V = [batch size, value len, hid dim]
+
+        # Change the shape of QKV
+        Q = Q.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+        K = K.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+        V = V.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+        
+        #Q = [batch size, n heads, query len, head dim]
+        #K = [batch size, n heads, key len, head dim]
+        #V = [batch size, n heads, value len, head dim]
+
+        energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale
+        #energy = [batch size, n heads, query len, key len]
+
+        if mask is not None:
+            energy = energy.masked_fill(mask == 0, -1e10)
+        
+        attention = torch.softmax(energy, dim = -1) # attention = softmax of QK/d_k
+
+        #attention = [batch size, n heads, query len, key len]
+        
+        x = torch.matmul(self.dropout(attention), V)
+
+        #x = [batch size, n heads, query len, head dim]
+
+        x = x.permute(0, 2, 1, 3).contiguous() # Change the shape again
+        
+        #x = [batch size, query len, n heads, head dim]
+        
+        x = x.view(batch_size, -1, self.hid_dim)
+        
+        #x = [batch size, query len, hid dim]
+
+        x = self.fc_o(x) # Linear layer output for attention
+        
+        #x = [batch size, query len, hid dim]
+        
+        return x, attention
 
 
 
