@@ -48,6 +48,11 @@ def main():
     V=np.matmul(x,w_value)
     print(V)
 
+    """
+    At this step, we first obtain the Q1 vector of word 1 by multiply the word by the Q matrix
+    We then calcualte the score of the input by multiply the Q of each to all K values (attention to other word and to itself)
+    Then we softmax it and multiply with the V value of all 3 words thus we know that the word attend to other words and itself and what value it focus on
+    """
     print("Step 4: Scaled Attention Scores for all 3 words")
     k_d = 1   #square root of k_d=3 rounded down to 1 for this example
     attention_scores = (Q @ K.transpose())/k_d
