@@ -19,3 +19,36 @@ About Transformer:
 - Attention is highly-efficient opertation due to its parallelizability and runtime characteristic 
 - The entire model is made up of linear layers, attention mechanishm, and normalization
 """
+
+from utils.model import *
+from utils.preprocess import *
+
+INPUT_DIM = len(SRC.vocab)
+OUTPUT_DIM = len(TRG.vocab)
+HID_DIM = 256
+ENC_LAYERS = 3
+DEC_LAYERS = 3
+ENC_HEADS = 8
+DEC_HEADS = 8
+ENC_PF_DIM = 512
+DEC_PF_DIM = 512
+ENC_DROPOUT = 0.1
+DEC_DROPOUT = 0.1
+
+enc = Encoder(INPUT_DIM, 
+              HID_DIM, 
+              ENC_LAYERS, 
+              ENC_HEADS, 
+              ENC_PF_DIM, 
+              ENC_DROPOUT, 
+              device)
+
+dec = Decoder(OUTPUT_DIM, 
+              HID_DIM, 
+              DEC_LAYERS, 
+              DEC_HEADS, 
+              DEC_PF_DIM, 
+              DEC_DROPOUT, 
+              device)
+
+
