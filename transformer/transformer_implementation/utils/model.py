@@ -221,8 +221,67 @@ class PositionwiseFeedforwardLayer(nn.Module):
         #x = [batch size, seq len, hid dim]
         
         return x
+###############################################################################
+"""
+DECODER LAYER:
+- The decoder layer is similar to the encoder layer except that it is not has 2 multi-head attention layer, self_attention and encoder_attention
+- The "MASKED MULTIHEAD ATTENTION" performs self-attention - QKV like the encoder. 
+    + This followed by dropout, residual connection, and layer normalization.
+    + This self-attention layer uses the target senttence mask, trg_mask, in order to prevent the decoder from cheating by pating attention to tokens that are ahead of the one it is currently processing as it process all tokens in the target sentence in parallel
+- The second "MULTIHEAD ATTENTION" is how we actually feed the encoded source sentence - enc_src into our decoder. 
+    + In this multi-head attention layer, the queries are the decoder representation and the keys K and values V are the encoder representaion
+    + Here the source mask, src_mask is used to prevent the multi_head attention layer from attending to <pad> token within th source sentence
+    + This is then followed by the dropout, residual connection and layer normalization layer
+- We pass this through the position-wise feedforward layer and yet another sequence of dropout, residual connection and layer normalization.
+"""
+class DecoderLayer(nn.Module):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+        super().__init__()
+        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
+        self.enc_attn_layer_norm = nn.LayerNorm(hid_dim)
+        self.ff_layer_norm = nn.LayerNorm(hid_dim)
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+
+        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, trg, enc_src, trg_mask, src_mask):
+        #trg = [batch size, trg len, hid dim]
+        #enc_src = [batch size, src len, hid dim]
+        #trg_mask = [batch size, 1, trg len, trg len]
+        #src_mask = [batch size, 1, 1, src len]
+
+        #self attention
+        _trg, _ = self.self_attention(trg, trg, trg, trg_mask)
+
+        #dropout, residual connection and layer norm
+        trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
+            
+        #trg = [batch size, trg len, hid dim]
+            
+        #encoder attention
+        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, src_mask)
+        
+        #dropout, residual connection and layer norm
+        trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))
+                    
+        #trg = [batch size, trg len, hid dim]
+        
+        #positionwise feedforward
+        _trg = self.positionwise_feedforward(trg)
+        
+        #dropout, residual and layer norm
+        trg = self.ff_layer_norm(trg + self.dropout(_trg))
+        
+        #trg = [batch size, trg len, hid dim]
+        #attention = [batch size, n heads, trg len, src len]
+        
+        return trg, attention
 
 
+
+###############################################################################
 def model():
     print("Runnning Model")
 
