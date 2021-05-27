@@ -195,6 +195,32 @@ class MultiHeadAttentionLayer(nn.Module):
         
         return x, attention
 
+"""
+POSITION WISE FEEDFORWARD LAYER (did not explain in the paper)
+- The input is transformed from hid_dim to pf_dim (a lot larger than hid_dim)
+- The original Transformer used a hid_dim of 512 and a pf_dim of 2048.
+- The ReLU activation function and dropout are applied before it is transformed back into a hid_dim representation
+"""
+class PositionwiseFeedforwardLayer(nn.Module):
+    def __init__(self, hid_dim, pf_dim, dropout):
+        super().__init__()
+        self.fc_1 = nn.Linear(hid_dim, pf_dim)
+        self.fc_2 = nn.Linear(pf_dim, hid_dim)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        #x = [batch size, seq len, hid dim]
+        
+        x = self.dropout(torch.relu(self.fc_1(x)))
+        
+        #x = [batch size, seq len, pf dim]
+        
+        x = self.fc_2(x)
+        
+        #x = [batch size, seq len, hid dim]
+        
+        return x
 
 
 def model():
