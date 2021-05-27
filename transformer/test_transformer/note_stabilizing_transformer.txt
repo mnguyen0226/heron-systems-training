@@ -1,0 +1,8 @@
+Resource: https://arxiv.org/abs/1910.06764
+Paper: Stabilizing Transformers for Reinforcement Learning
+- Propose architecture that substantially improve the stability and learning speed of the original Transformer and XL variant
+- architecture called Gated Transformer-XL
+- Gated Transformer trained using the same losses has stability and performance that consistently matches or exceeds a competitive LSTM baseline
+- Gated Transformer offes an easy-to-train, simple-to-implement but substantially more expressive architectural alternative to the standard multi-layer LSTM ubiquitously used for RL agents in partially observale environment
+
+- "Idenity Map Reordering" and "gating mechanisms are critical for stabilizing learning and improving performance"
