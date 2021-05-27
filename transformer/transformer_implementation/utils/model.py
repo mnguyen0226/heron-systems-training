@@ -278,9 +278,76 @@ class DecoderLayer(nn.Module):
         #attention = [batch size, n heads, trg len, src len]
         
         return trg, attention
+###############################################################################
+"""
+SEQ2SEQ model - capture encoder and decoder + create masks
 
+- The src mask is created by checking where the source sequence is not equal to a <pad> token. It is 1 where the token is not a <pad> token and 0 when it is. It is then unsqueezed so it can be correctly broadcast when applying the mask to the energy, which of shape [batch size, n heads, seq len, seq len].
+- The trg mask:
+    + First, we create a mask for the <pad> tokens, as we did for the source mask.
+    + Next, we create a "subsequent" mask, trg_sub_mask, using torch.tril.
+        This creates a diagonal matrix where the elements above the diagonal will be zero and the elements below the diagonal will be set to whatever the input tensor is
+        This shows what each target token (row) is allowed to look at (column). The first target token has a mask of [1, 0, 0, 0, 0] which means it can only look at the first target token. The second target token has a mask of [1, 1, 0, 0, 0] which it means it can look at both the first and second target tokens.
+- After the masks are created, they used with encoder and decoder along with the src and target sentence to get our predicted target sentence, utput, along withthe decoder's attemntion over the src sentence
+"""
+class Seq2Seq(nn.Module):
+    def __init__(self, encoder, decoder, src_pad_idx, trg_pad_idx, device):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_pad_idx = src_pad_idx
+        self.trg_pad_idx = trg_pad_idx
+        self.device = device
+    
+    def make_src_mask(self, src):
+        #src = [batch size, src len]
+        
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
 
+        #src_mask = [batch size, 1, 1, src len]
 
+        return src_mask
+    
+    def make_trg_mask(self, trg):
+        
+        #trg = [batch size, trg len]
+        
+        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(2)
+        
+        #trg_pad_mask = [batch size, 1, 1, trg len]
+        
+        trg_len = trg.shape[1]
+        
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device = self.device)).bool()
+        
+        #trg_sub_mask = [trg len, trg len]
+            
+        trg_mask = trg_pad_mask & trg_sub_mask
+        
+        #trg_mask = [batch size, 1, trg len, trg len]
+        
+        return trg_mask
+
+    def forward(self, src, trg):
+        #src = [batch size, src len]
+        #trg = [batch size, trg len]
+                
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
+        
+        #src_mask = [batch size, 1, 1, src len]
+        #trg_mask = [batch size, 1, trg len, trg len]
+        
+        enc_src = self.encoder(src, src_mask)
+        
+        #enc_src = [batch size, src len, hid dim]
+                
+        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        
+        #output = [batch size, trg len, output dim]
+        #attention = [batch size, n heads, trg len, src len]
+        
+        return output, attention
 ###############################################################################
 def model():
     print("Runnning Model")
