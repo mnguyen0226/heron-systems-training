@@ -41,7 +41,7 @@ ENCODER LAYER:
 - We first pass the src sentence and its mask into the multi-head attention layer, then perform a dropout on it, apply a sedifual connection and pass it thru a Layer Normalization  layer
 - We then pass it thru a position-wise feedforward layer and then again apply dropout, a residual connection and then a layer normalization to get the output of this layer which is fed into the next layer.
 - The muti-head attention layer is used by encoder layer to attend to the source sentence meaning that it calculate and applies attention over itself instead of another sequence, hence we call it self-attention
-
+- This basically jsut resolve input and call the encoder sublayers but not implement the sublayer yet. It does allow for repetition tho
 """
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
@@ -74,6 +74,48 @@ class Encoder(nn.Module):
         # src = [batch_size, src_len, hid_dim]
 
         return src
+
+"""
+ENCODER LAYER - ENCODER SUBLAYERS
+- We first pass the srouce sentence and its mask into the multi-head attention layer, the perform drop out on it.
+- We the apply the residual connection and pass thru the layer normalization layer.
+- We then pass it thru a position-wise feedforward laer and then apply dropout, a residual connection and a normalization to get the output of this SUBLAYER which will then feed to a next sublayer.
+
+The multihead attention layer is used by the encoder layer to attend to the srouce sentece = it calculating and applying attention over itself intead of another sequence =? self attention
+"""
+class EncoderLayer(nn.Module):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+        super().__init__()
+        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
+        self.ff_layer_norm = nn.LayerNorm(hid_dim)
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(self, src, src_mask):
+        #src = [batch size, src len, hid dim]
+        #src_mask = [batch size, 1, 1, src len] 
+
+        #self attention
+        _src, _ = self.self_attention(src, src, src, src_mask)
+
+        #dropout, residual connection and layer norm
+        src = self.self_attn_layer_norm(src + self.dropout(_src))
+
+        #src = [batch size, src len, hid dim]
+
+        #positionwise feedforward
+        _src = self.positionwise_feedforward(src)
+
+        #dropout, residual and layer norm
+        src = self.ff_layer_norm(src + self.dropout(_src))
+        
+        #src = [batch size, src len, hid dim]
+
+        return src
+
+
+
 
 def model():
     print("Runnning Model")
