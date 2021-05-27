@@ -97,7 +97,7 @@ class EncoderLayer(nn.Module):
         #src_mask = [batch size, 1, 1, src len] 
 
         #self attention
-        _src, _ = self.self_attention(src, src, src, src_mask)
+        _src, _ = self.self_attention(src, src, src, src_mask) # not using the attention result
 
         #dropout, residual connection and layer norm
         src = self.self_attn_layer_norm(src + self.dropout(_src))
@@ -185,7 +185,7 @@ class MultiHeadAttentionLayer(nn.Module):
         
         #x = [batch size, query len, n heads, head dim]
         
-        x = x.view(batch_size, -1, self.hid_dim)
+        x = x.view(batch_size, -1, self.hid_dim) # combine the heads together
         
         #x = [batch size, query len, hid dim]
 
