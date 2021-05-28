@@ -1,4 +1,3 @@
-from heron_systems_training.transformer.transformer_implementation.utils.model import EncoderLayer
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -154,6 +153,7 @@ class EncoderLayer(nn.Module):
         first_norm_out = self.first_norm(src)
         attn_out, _ = self.attn_layer(first_norm_out, first_norm_out, first_norm_out, src_mask)
         first_gate_out = self.first_gate(src, self.dropout(attn_out))
+
         second_norm_out = self.second_norm(first_gate_out)
         projection_out = self.projection(second_norm_out)
         second_gate_out = self.second_gate(projection_out, self.dropout(first_gate_out))
@@ -230,6 +230,15 @@ class Attn(nn.Module):
 
         Parameter
         ----------
+        query, key, value:
+            Query is used with the key to get the attention vector which is then used to get the weighted sum of the values
+        mask: bool
+            We then mask the energy so we do not pay attention over any elements of the sequeuence we shouldn't
+
+        Returns
+        ----------
+        x: output for the Gate Layer
+            [batch size, query len, hid dim]
         """
         batch_size = query.shape[0]
         
@@ -280,6 +289,17 @@ class Attn(nn.Module):
 # TODO: Might have to change this to ReLU
 class Projection(nn.Module):
     def __init__(self, hid_dim, pf_dim, dropout):
+        """Feedforward Positionwise Multilayer Perceptron for the EncoderLayer
+
+        Parameter
+        ----------
+        hid_dim:
+            Dimension of the processed (gated, normalized, tokenized & vectorized) text data that will be input to the LayerNorm
+        pf_dim:
+            Input dimension of the Projection Layer, this is usually larger than the hid_dim
+        dropout:
+            Probability of dropout
+        """
         super().__init__()
         self.fc_1 = nn.Linear(hid_dim, pf_dim)
         self.fc_2 = nn.Linear(hid_dim, hid_dim)
@@ -287,6 +307,18 @@ class Projection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
+        """The forward function for Projection/Positionwise MLP Layer
+
+        Parameter
+        ----------
+        x: 
+            output of the LayerNorm 
+        
+        Return
+        ----------
+        x:
+            Output of the Projection Layer that has the dim of [batch size, seq len, hid dim]. This will be an input for the Gating Layer
+        """
         # x = [batch size, seq len, hid dim]
         x = self.dropout(torch.relu(self.fc_1(x)))
         #x = [batch size, seq len, pf dim]
@@ -296,18 +328,46 @@ class Projection(nn.Module):
 
         return x
 
-
 class Gate(nn.Module): # make sure this has the input dim and the self attention dim to be the same size
     def __init__ (self, input_dim):
+        """Gating Layer for the EncoderLayer
+    
+        Parameter
+        ----------
+        input_dim:
+            Dimension of the processed (feedforwarded, gated, normalized, tokenized & vectorized) text data that will be input to the LayerNorm
+
+        Return
+        ----------
+        gate_output:
+            output of the second Gating Layer that has a dim of [batch size, seq len, hid dim]
+        """
         super()._init__()
         self.gru = nn.GRU(input_size = input_dim, hidden_size = input_dim) # output the hidden state & gate output
 
     def forward(self, x, y): # x is the original input, y is the attention output
+        """The feedforward functio for the Gating Layer
+
+        Parameter
+        ----------
+        x: 
+            The output from the first gating layer
+        Return
+        ----------
+        gate_output:
+            output of the second Gating Layer that has a dim of [batch size, seq len, hid dim]
+        """
         gate_output, _ = self.gru(x, y)
+        #gate_output = [batch size, seq len, hid dim]
 
         return gate_output
 
+###############################################################################
+def encoder():
+    print("Runnning Encoder")
 
+if __name__ == "__main__":
+    encoder()
 
 
 
