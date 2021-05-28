@@ -1,5 +1,8 @@
 # File used to run training Gated Transformer on German - English Translation
 
+from utils.preprocess import *
+from utils.encoder import *
+from utils.decoder import *
 from utils.seq2seq import *
 from utils.preprocess import *
 
@@ -17,19 +20,19 @@ DEC_DROPOUT = 0.1
 
 enc = Encoder(INPUT_DIM, 
               HID_DIM, 
-              ENC_LAYERS, 
               ENC_HEADS, 
               ENC_PF_DIM, 
               ENC_DROPOUT, 
-              device)
+              device,              
+              ENC_LAYERS)
 
 dec = Decoder(OUTPUT_DIM, 
               HID_DIM, 
-              DEC_LAYERS, 
               DEC_HEADS, 
               DEC_PF_DIM, 
               DEC_DROPOUT, 
-              device)
+              device,
+              DEC_LAYERS)
 
 
 

@@ -58,13 +58,12 @@ class Encoder(nn.Module):
         self.device = device
         self.tok_embedding = nn.Embedding(input_dim, hid_dim) #(input, output)
         self.pos_embedding = nn.Embedding(max_length, hid_dim) #(input, output)
-
+        
+        # This design is for multilayer encoder
+        self.layers = nn.ModuleList([EncoderLayer(hid_dim, pf_dim, dropout, device, n_heads) for _ in range(n_layers)])        
         self.dropout = nn.Dropout(dropout)
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device=device)
-
-        # This design is for multilayer encoder
-        self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])        
-
+      
     def forward(self, src, src_mask):
         """The forward function for encoding layer
 
@@ -342,7 +341,7 @@ class Gate(nn.Module): # make sure this has the input dim and the self attention
         gate_output:
             output of the second Gating Layer that has a dim of [batch size, seq len, hid dim]
         """
-        super()._init__()
+        super().__init__()
         self.gru = nn.GRU(input_size = input_dim, hidden_size = input_dim) # output the hidden state & gate output
 
     def forward(self, x, y): # x is the original input, y is the attention output

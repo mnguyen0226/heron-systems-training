@@ -34,7 +34,7 @@ class Decoder(nn.Module):
         self.tok_embedding = nn.Embedding(output_dim, hid_dim)
         self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
-        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range (n_layers)])
+        self.layers = nn.ModuleList([DecoderLayer(hid_dim, pf_dim, dropout, device, n_heads) for _ in range (n_layers)])
 
         self.fc_out = nn.Linear(hid_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
