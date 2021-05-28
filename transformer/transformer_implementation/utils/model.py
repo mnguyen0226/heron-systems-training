@@ -96,7 +96,7 @@ class EncoderLayer(nn.Module):
         #src = [batch size, src len, hid dim]
         #src_mask = [batch size, 1, 1, src len] 
 
-        #self attention
+        #self attention         #_src = [batch size, query len, hid dim]
         _src, _ = self.self_attention(src, src, src, src_mask) # not using the attention result
 
         #dropout, residual connection and layer norm
