@@ -18,6 +18,7 @@ import time
 
 from utils.encoder import MultiHeadAttentionLayer
 from utils.encoder import PositionwiseFeedforwardLayer
+from utils.encoder import Gate
 
 class Decoder(nn.Module):
     def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length=100):
@@ -131,15 +132,18 @@ class GatedDecoderLayer(nn.Module):
         super().__init__()
         self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        # self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        # self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.second_gate = Gate(hid_dim=hid_dim)
 
         self.third_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
-        self.third_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        # self.third_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.third_gate = Gate(hid_dim=hid_dim)
 
         self.dropout = nn.Dropout(dropout)
 

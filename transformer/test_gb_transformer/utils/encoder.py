@@ -79,6 +79,47 @@ class Encoder(nn.Module):
 
         return src
 
+class Gate(nn.Module):
+    def __init__(self, hid_dim):
+        super().__init__()
+        self.gru = nn.GRU(input_size = hid_dim, hidden_size=hid_dim)
+
+    # def forward(self, output, original_input):
+    #     """
+    #     output.shape = original_input.shape = [batch size, src len, hid dim]
+    #     """
+    #     gate_output, hidden = self.gru(output, original_input)
+
+    #     return gate_output, hidden
+
+    def forward(self, output, original_input):
+        """
+        output.shape = original_input.shape = [batch size, src len, hid dim]
+        """
+        b,f,s = original_input.shape
+
+        # Permute the x and y so that the shape is now [B,S,F]
+        # original_input_permuted = original_input.permute(0,2,1)
+        # output_permuted = output.permute(0,2,1)
+        original_input_permuted = original_input
+        output_permuted = output
+
+
+        # We really just need the GRU to weight between the input and the self attention. So we
+        # resize to be [B * S, 1, F] so that we essentially have a massive batch of samples with
+        # sequence length 1 and F features        
+
+        # print(f"TESTING: {output_permuted.shape} & {original_input_permuted.shape}")
+        # print(f"TESTING: {torch.reshape(output_permuted, (1, b*f, s)).shape} & {torch.reshape(original_input_permuted, (1, b*f, s)).contiguous().shape}")
+
+        gate_output, hidden = self.gru(
+            torch.reshape(output_permuted, (1, b*f, s)),
+            torch.reshape(original_input_permuted, (1, b*f, s)).contiguous(),
+        )
+
+        return gate_output.view(b,s,f).permute(0,2,1), hidden
+
+
 class GatedEncoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
         """Gated Encoder layer of Encoder of the Transformer
@@ -99,11 +140,13 @@ class GatedEncoderLayer(nn.Module):
         super().__init__()
         self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        # self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
-        self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        # self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.second_gate = Gate(hid_dim=hid_dim)
         
         self.dropout = nn.Dropout(dropout)
 
@@ -131,8 +174,12 @@ class GatedEncoderLayer(nn.Module):
         # self-attention
         _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask)
 
+        # print("CHECKING")
+        # print(f"TESTING {(self.dropout(_src)).shape} & {src.shape}")
         # first gate
+        # first_gate_output, _ = self.first_gate(self.dropout(_src), src) # [batch size, src len, hid dim]
         first_gate_output, _ = self.first_gate(self.dropout(_src), src) # [batch size, src len, hid dim]
+        # print(f"TESTING: {first_gate_output.shape}")
 
         # second layer norm - already dropped from first gate
         src = self.second_layer_norm(first_gate_output) 

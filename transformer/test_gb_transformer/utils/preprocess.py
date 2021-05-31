@@ -65,7 +65,7 @@ TRG.build_vocab(train_data, min_freq = 2)
 # set device either cpu/gpu
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE = 128 
+BATCH_SIZE = 128
 
 # define training, validating, testing iterators
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
