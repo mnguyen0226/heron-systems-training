@@ -35,14 +35,6 @@ ENCODER:
     + the combined embeddings are then passed thru N encoder layers to get Z, which is then output and can be used by decoder 
 """
 
-
-"""
-ENCODER LAYER:
-- We first pass the src sentence and its mask into the multi-head attention layer, then perform a dropout on it, apply a sedifual connection and pass it thru a Layer Normalization  layer
-- We then pass it thru a position-wise feedforward layer and then again apply dropout, a residual connection and then a layer normalization to get the output of this layer which is fed into the next layer.
-- The muti-head attention layer is used by encoder layer to attend to the source sentence meaning that it calculate and applies attention over itself instead of another sequence, hence we call it self-attention
-- This basically jsut resolve input and call the encoder sublayers but not implement the sublayer yet. It does allow for repetition tho
-"""
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
         """Encoder wrapper for Transformer: preprocessing the input data, call EncoderLayer, and provide output
@@ -107,14 +99,6 @@ class Encoder(nn.Module):
 
         return src
 
-"""
-ENCODER LAYER - ENCODER SUBLAYERS
-- We first pass the srouce sentence and its mask into the multi-head attention layer, the perform drop out on it.
-- We the apply the residual connection and pass thru the layer normalization layer.
-- We then pass it thru a position-wise feedforward laer and then apply dropout, a residual connection and a normalization to get the output of this SUBLAYER which will then feed to a next sublayer.
-
-The multihead attention layer is used by the encoder layer to attend to the srouce sentece = it calculating and applying attention over itself intead of another sequence =? self attention
-"""
 class EncoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
         """ EncoderLayer of the Encoder of Transformer contains Multi-Head Attention, Add&Normal, Feed-forward, Add&Norm
@@ -173,16 +157,6 @@ class EncoderLayer(nn.Module):
 
         return src
 
-"""
-MULTI HEAD ATTENTION LAYER
-- Attention can be through as queries, keys, and values 
-    + Query is used with the key to get the attention vector (usually the output of the softmax operation and has all values between 0 and 1 which sum to 1) 
-        which is then used to get the weighted sum of the values
-    + d_k help scale the dot product attention which is used to stop the results of the dot products growing large, causing the gradients to become too small
-    + The scaled dot-product. Instead of doing a sigle attention application, the hid_dim split into h heads and the scaled dotproduct attentin is calculated over all heads in parallel.
-        This means instead of paying attention to 1 concep per attention application, we pay attention to h.
-    + Recombine the heads into their hid_dim shape, thus each hid_dim is potentially paying attentoion to h dif conceps
-"""
 class MultiHeadAttentionLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, dropout, device):
         """Multi/single Head Attention Layer. Define Q,K,V of the EncoderLayer
@@ -235,7 +209,7 @@ class MultiHeadAttentionLayer(nn.Module):
         Return
         ----------
         src: [batch size, query len, hid dim] 
-            basically either input to Decoder for EncoderLayer = 1 or input to another EncoderLayer
+            basically either input to Add&Normalized layer
         """
         #query = [batch size, query len, hid dim]
         #key = [batch size, key len, hid dim]
@@ -286,32 +260,51 @@ class MultiHeadAttentionLayer(nn.Module):
         
         return x, attention
 
-"""
-POSITION WISE FEEDFORWARD LAYER (did not explain in the paper)
-- The input is transformed from hid_dim to pf_dim (a lot larger than hid_dim)
-- The original Transformer used a hid_dim of 512 and a pf_dim of 2048.
-- The ReLU activation function and dropout are applied before it is transformed back into a hid_dim representation
-"""
 class PositionwiseFeedforwardLayer(nn.Module):
     def __init__(self, hid_dim, pf_dim, dropout):
+        """Positionwise Feedforward layer of the EncoderLayer.
+        Why is this used? Unfortunately, it is never explained in the paper.
+        The transformed from hid_dim to pf_dim (pf_dim >> hid_dim.
+        The ReLU activation function and dropout are applied before it is transformed back into hid_dim representation
+        
+        Parameters
+        ----------
+        hid_dim:
+            input hidden dim from the Add&Norm Layer
+        pf_dim:
+            output feedforward dim
+        dropout:
+            dropout rate: 0.1 for encoder
+        """
         super().__init__()
-        self.fc_1 = nn.Linear(hid_dim, pf_dim)
-        self.fc_2 = nn.Linear(pf_dim, hid_dim)
+        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim) # linear transformation
+        self.fc_2 = nn.Linear(in_features=pf_dim, out_features=hid_dim) # linear transformation # make sure to conert back from pf_dim to hid_dim
 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        #x = [batch size, seq len, hid dim]
+        """Feedforward function for the PFF Layer
+
+        Parameters
+        ----------
+        x: [batch size, seq len, hid dim]
+            input from the Add&Norm Layer
+
+        Return
+        ----------
+        x: [batch size, seq len, hid dim]
+            output to Add&Norm Layer
+        """
+        #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
         
-        x = self.dropout(torch.relu(self.fc_1(x)))
-        
-        #x = [batch size, seq len, pf dim]
+        x = self.dropout(torch.relu(self.fc_1(x))) # relu then dropout to contain same infor
+        #x = [batch size, seq len, pf dim] OR [batch size, src len, hid dim]
         
         x = self.fc_2(x)
-        
-        #x = [batch size, seq len, hid dim]
+        #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
         
         return x
+
 ###############################################################################
 class Decoder(nn.Module):
     def __init__(self, 
