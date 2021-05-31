@@ -100,9 +100,11 @@ class GatedEncoderLayer(nn.Module):
         self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+
         self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask):
