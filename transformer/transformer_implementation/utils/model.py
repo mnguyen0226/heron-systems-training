@@ -400,6 +400,10 @@ class Decoder(nn.Module):
             
         return output, attention
 
+# NOTE: 
+# for Transformer: Dropout + Add => Layer Norm
+# for Gated Transformer: Layer Norm: Dropout + Gating Layer
+
 class DecoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
         """DecoderLayer for the Decoder which contains of:
