@@ -45,6 +45,9 @@ ENCODER LAYER:
 """
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
+        """Encoder wrapper for Transformer: preprocessing 
+
+        """
         super().__init__()
         self.device = device 
         self.tok_embedding = nn.Embedding(input_dim, hid_dim) # input, output
