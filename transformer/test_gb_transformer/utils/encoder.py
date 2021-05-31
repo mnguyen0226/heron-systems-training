@@ -230,3 +230,46 @@ class MultiHeadAttentionLayer(nn.Module):
         x = self.fc_o(x) # Linear layer output for attention
         
         return x, attention
+
+class PositionwiseFeedforwardLayer(nn.Module):
+    def __init__(self, hid_dim, pf_dim, dropout):
+        """Positionwise Feedforward layer of GatedEncoderLayer
+        Why is this used? Unfortunately, it is never explained in the paper.
+        The transformed from hid_dim to pf_dim (pf_dim >> hid_dim.
+        The ReLU activation function and dropout are applied before it is transformed back into hid_dim representation
+        
+        Parameters
+        ----------
+        hid_dim:
+            input hidden dimension from the second layer norm
+        pf_dim:
+            dimension of the output for the position-wise feedforward layer
+        dropout:
+            dropout rate = 0.1
+        """
+        super().__init__()
+        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim) # linear transformation
+        self.fc_2 = nn.Linear(in_features=pf_dim, out_features=hid_dim) # linear transformation # make sure to conert back from pf_dim to hid_dim
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        """Feedforward function for the PFF layer
+
+        Parameters
+        ----------
+        x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+            input from the second layer norm
+        
+        Return
+        ---------- 
+        x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+            output to the second gate layer
+        """
+        #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+        x = self.dropout(torch.relu(self.fc_1(x))) # relu then dropout to contain same infor
+
+        #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+        x = self.fc_2(x)
+
+        return x
+
