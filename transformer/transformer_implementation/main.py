@@ -23,6 +23,7 @@ About Transformer:
 from utils.model import *
 from utils.preprocess import *
 
+# Define encoder and decoder
 INPUT_DIM = len(SRC.vocab)
 OUTPUT_DIM = len(TRG.vocab)
 HID_DIM = 256
@@ -51,17 +52,36 @@ dec = Decoder(OUTPUT_DIM,
               DEC_DROPOUT, 
               device)
 
+# Define whole Seq2Seq encapsulating model
 SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
 TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
 model = Seq2Seq(enc, dec, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device)
 
 def count_parameters(model):
+    """Check number of training parameters
+    
+    Parameters
+    ----------
+    model:
+        input seq2seq model
+    
+    Return
+    ----------
+    Total number of training parameters
+    """
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 print(f'The model has {count_parameters(model):,} trainable parameters')
 
 def initialize_weights(m):
+    """Xavier uniform initialization 
+
+    Parameters
+    ----------
+    m:
+        input model
+    """
     if hasattr(m, 'weight') and m.weight.dim() > 1:
         nn.init.xavier_uniform_(m.weight.data)
 
@@ -69,11 +89,33 @@ model.apply(initialize_weights);
 
 LEARNING_RATE = 0.0005
 
+# Adam optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
 
+# Cross Entropy Loss Function
 criterion = nn.CrossEntropyLoss(ignore_index = TRG_PAD_IDX)
 
 def train(model, iterator, optimizer, criterion, clip):
+    """Train by calculating losses and update parameters
+
+    Parameters
+    ----------
+    model:
+        input seq2seq model
+    iterator:
+        SRC, TRG iterator
+    optimizer:
+        Adam optimizer
+    criterion:
+        Cross Entropy Loss function
+    clip:   
+        ?
+    
+    Return
+    ----------
+    epoch_loss / len(iterator)
+        Loss percentage during training
+    """
     
     model.train()
     
@@ -112,6 +154,20 @@ def train(model, iterator, optimizer, criterion, clip):
     return epoch_loss / len(iterator)
 
 def evaluate(model, iterator, criterion):
+    """Evaluate same as training but no gradient calculation and parameter updates
+
+    Parameters
+    ----------
+    iterator:
+        SRC, TRG iterator
+    criterion:
+        Cross Entropy Loss function
+
+    Return
+    ----------
+    epoch_loss / len(iterator):
+        Loss percentage during validating
+    """
     
     model.eval()
     
@@ -125,7 +181,6 @@ def evaluate(model, iterator, criterion):
             trg = batch.trg
 
             output, _ = model(src, trg[:,:-1])
-            
             #output = [batch size, trg len - 1, output dim]
             #trg = [batch size, trg len]
             
@@ -144,6 +199,19 @@ def evaluate(model, iterator, criterion):
     return epoch_loss / len(iterator)
 
 def epoch_time(start_time, end_time):
+    """Tells how long an epoch takes
+
+    Parameters
+    ----------
+    start_time:
+        start time
+    end_time:
+        end_time
+    
+    Return
+    ----------
+    Epoch run time
+    """
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
@@ -153,6 +221,8 @@ N_EPOCHS = 10
 CLIP = 1
 
 def main():
+    """Run Training and Evaluating procedure
+    """
     print("Running model.py")
 
     best_valid_loss = float('inf')
