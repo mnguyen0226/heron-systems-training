@@ -149,8 +149,84 @@ class MultiHeadAttentionLayer(nn.Module):
 
         Parameters
         ----------
-
+        hid_dim:
+            input hidden dimension from the first layer norm
+        n_heads:
+            number of heads for attention mechanism
+        dropout:
+            dropout rate = 0.1
+        device: 
+            cpu or gpu
         """
 
+        super().__init__()
 
+        assert hid_dim % n_heads == 0 # make sure that number of multiheads are concatenatable
 
+        self.hid_dim = hid_dim
+        self.n_heads = n_heads
+        self.head_dim = hid_dim // n_heads # determine the head_dim
+
+        self.fc_q = nn.Linear(in_features=hid_dim, out_features=hid_dim) # apply linear transformation
+        self.fc_k = nn.Linear(in_features=hid_dim, out_features=hid_dim) # apply linear transformation
+        self.fc_v = nn.Linear(in_features=hid_dim, out_features=hid_dim) # apply linear transformation
+
+        self.fc_o = nn.Linear(in_features=hid_dim, out_features=hid_dim) # apply linear transformation
+
+        self.dropout = nn.Dropout(dropout) 
+        self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(device) # d_k = head_dim, will be hid_dim if n_heads == 1
+
+    def forward(self, query, key, value, mask=None):
+        """Feed-forward layer for the attention mechanism
+
+        Parameters
+        ----------
+        query, key, value:
+            Query is used with Key to get an attention vector which is then weighted sum with Value
+        mask:
+            masked the input text but allow to ignore <pad> after tokenized during training in the tokenized vector since it does not provide any value
+
+        Return
+        ----------
+        x: [batch size, query len, hid dim] 
+            input to the first gate layer
+        """
+        #query = [batch size, query len, hid dim]
+        #key = [batch size, key len, hid dim]
+        #value = [batch size, value len, hid dim]
+        
+        batch_size = query.shape[0]
+
+        Q = self.fc_q(query) # applied linear transformation but keep dim, Q = [batch size, query len, hid dim]
+        K = self.fc_k(key) # applied linear transformation but keep dim, K = [batch size, key len, hid dim]
+        V = self.fc_v(value) # applied linear transformation but keep dim, V = [batch size, value len, hid dim]
+
+        # Change the shape of QKV
+        Q = Q.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3) #Q = [batch size, n heads, query len, head dim]
+        K = K.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3) #K = [batch size, n heads, key len, head dim]
+        V = V.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3) #V = [batch size, n heads, value len, head dim]
+
+        #-------------------------------------------------------
+        #energy = [batch size, n heads, query len, key len]
+        energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale # matmul, scale
+
+        if mask is not None:
+            energy = energy.masked_fill(mask == 0, -1e10) # mask
+        
+        #attention = [batch size, n heads, query len, key len]
+        attention = torch.softmax(energy, dim = -1) # attention = softmax of QK/d_k
+        
+        #x = [batch size, n heads, query len, head dim] # original Q,K,V dim
+        x = torch.matmul(self.dropout(attention), V) # matmul
+        #-------------------------------------------------------
+
+        #x = [batch size, query len, n heads, head dim]
+        x = x.permute(0, 2, 1, 3).contiguous() # Change the shape again for concat
+        
+        #x = [batch size, query len, hid dim]
+        x = x.view(batch_size, -1, self.hid_dim) # combine the heads together
+
+        #x = [batch size, query len, hid dim]
+        x = self.fc_o(x) # Linear layer output for attention
+        
+        return x, attention
