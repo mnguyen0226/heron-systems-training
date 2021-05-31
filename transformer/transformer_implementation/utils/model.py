@@ -307,89 +307,169 @@ class PositionwiseFeedforwardLayer(nn.Module):
 
 ###############################################################################
 class Decoder(nn.Module):
-    def __init__(self, 
-                 output_dim, 
-                 hid_dim, 
-                 n_layers, 
-                 n_heads, 
-                 pf_dim, 
-                 dropout, 
-                 device,
-                 max_length = 100):
+    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
+        """Decoder wrapper takes the conded representation of the source sentence Z and convert it into predicted tokens in the target sentence.
+        Then compare the target sentence with the actual tokens in thetarge sentence to calculate the loss
+        which will be used to calculated the gradients of parameters. Then use the optimizer to update the weight to improve the prediction.
+
+        The Decoder is similar to encoder, however, it now has 2 multi-head attention layers.
+        - masked multi-head attention layer over target sequence
+        - multi-head attention layer which uses the decoder representation as the query and the encoder representation as the key and value
+
+    
+        Parameters
+        ----------
+        output_dim:
+            input to the Output Embedding Layer
+        hid_dim: 
+            input hidden dim to the Decoder Layer
+        n_layers:
+            number of DecoderLayer layers
+        n_heads:
+            number of heads for attention mechanism
+        pf_dim:
+            output fim of the feed-forward layer
+        dropout:
+            dropout rate = 0.1
+        device:
+            cpu or gpu
+        max_length:
+            the positional encoding have a vocab of 100 meaning that they can accept sequences up to 100 tokens long
+        """
         super().__init__()
         
         self.device = device
         
-        self.tok_embedding = nn.Embedding(output_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, hid_dim)
+        self.tok_embedding = nn.Embedding(num_embeddings=output_dim, embedding_dim=hid_dim)
+        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
         
-        self.layers = nn.ModuleList([DecoderLayer(hid_dim, 
-                                                  n_heads, 
-                                                  pf_dim, 
-                                                  dropout, 
-                                                  device)
-                                     for _ in range(n_layers)])
+        # DecoderLayer
+        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
         
+        # Linear of the output
         self.fc_out = nn.Linear(hid_dim, output_dim)
         
+        # Softmax the output
         self.dropout = nn.Dropout(dropout)
         
+        # d_k
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
     
-    def forward(self, trg, enc_src, trg_mask, src_mask):        
+    def forward(self, trg, enc_src, trg_mask, src_mask): 
+        """Feed-forward of the Decoder contains of preprocess data, DecoderLayer and prediction
+
+        Paramters
+        ----------
+        trg:
+            target token(s)
+        enc_src:
+            output from the Encoder 
+        trg_mask:
+            masked out <pad> of the target token(s)
+        src_mask:
+            masked src but allow to ignore <pad> during training in the tokenized vector since it does not provide any value
+
+        Return
+        ----------
+        output: [batch size, trg len, output dim]
+            output embedded, tokenize, positional-encoded vectors of the output
+        attention: [batch size, n heads, trg len, src len]
+            we will not use this
+        """       
         #trg = [batch size, trg len]
-        #enc_src = [batch size, src len, hid dim]
+        #enc_src = [batch size, src len, hid dim] -> same dim from the output of Encoder
         #trg_mask = [batch size, 1, trg len, trg len]
         #src_mask = [batch size, 1, 1, src len]
                 
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
         
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-                            
+        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)                    
         #pos = [batch size, trg len]
             
-        trg = self.dropout((self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos))
-                
+        trg = self.dropout((self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos))    
         #trg = [batch size, trg len, hid dim]
         
         for layer in self.layers:
             trg, attention = layer(trg, enc_src, trg_mask, src_mask)
-        
         #trg = [batch size, trg len, hid dim]
         #attention = [batch size, n heads, trg len, src len]
         
         output = self.fc_out(trg)
-        
         #output = [batch size, trg len, output dim]
             
         return output, attention
 
-"""
-DECODER LAYER:
-- The decoder layer is similar to the encoder layer except that it is not has 2 multi-head attention layer, self_attention and encoder_attention
-- The "MASKED MULTIHEAD ATTENTION" performs self-attention - QKV like the encoder. 
-    + This followed by dropout, residual connection, and layer normalization.
-    + This self-attention layer uses the target senttence mask, trg_mask, in order to prevent the decoder from cheating by pating attention to tokens that are ahead of the one it is currently processing as it process all tokens in the target sentence in parallel
-- The second "MULTIHEAD ATTENTION" is how we actually feed the encoded source sentence - enc_src into our decoder. 
-    + In this multi-head attention layer, the queries are the decoder representation and the keys K and values V are the encoder representaion
-    + Here the source mask, src_mask is used to prevent the multi_head attention layer from attending to <pad> token within th source sentence
-    + This is then followed by the dropout, residual connection and layer normalization layer
-- We pass this through the position-wise feedforward layer and yet another sequence of dropout, residual connection and layer normalization.
-"""
 class DecoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
-        super().__init__()
-        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
-        self.enc_attn_layer_norm = nn.LayerNorm(hid_dim)
-        self.ff_layer_norm = nn.LayerNorm(hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        """DecoderLayer for the Decoder which contains of:
+            + Masked Multi-Head Attention - "self-attention"
+            + Add&Norm
+            + Multi-Head Attention - "encoder-attention"
+            + Add&Norm
+            + Feed Forward
+            + Add&Norm
+        
+        Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer. Then it follow the Add&Norm which is dropout, residual/adding connection then normalization
+            This layer uses the target sequence mask "trg_mask" in order to prevent the decoder from cheating by paying attention to tokens 
+            that are "ahead" of one it is currently processing as it processes all tokens in the target sentence in paralel
 
-        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        Encoder-attention used by feeding the encoded source sentence "enc_src". Q from Decoder and V, K from Encoder.
+            The src_mask is used to prevent the multi head attention layer from attending to <pad> tokens within the source sentence. 
+            This is the followed by the Add&Norm (dropout, residual connection, and layer normalization layer)
+
+        The we pass the result to the position-wise feedforward layer and another Add&Norm (dropout, residual connection adn layer normalization)
+        
+        Parameters
+        ----------
+        hid_dim:
+            input dim for the DecoderLayer
+        n_heads:
+            number of heads for the attention mechanism
+        pf_dim:
+            output dim for the feed-forward layer
+        dropout:
+            dropout rate = 0.1
+        device:
+            cpu or gpu 
+        """
+        super().__init__()
+        self.self_attn_layer_norm = nn.LayerNorm(normalized_shape=hid_dim) # add&norm 1
+        self.enc_attn_layer_norm = nn.LayerNorm(normalized_shape=hid_dim) # add&norm 2
+        self.ff_layer_norm = nn.LayerNorm(normalized_shape=hid_dim) # add&norm 3
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device) # masked multi-head attention
+        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device) # multi-head attention with encoder
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout) # feed-forward layer
+
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
+        """Feed-forward layer for the DecoderLayer with order:
+            + Masked Multi-Head Attention
+            + Add&Norm
+            + Multi-Head Attention
+            + Add&Norm
+            + Feed-forward
+            + Add&Norm
+        
+        Parameters
+        ----------
+        trg:
+            target token(s)
+        enc_src:
+            encoder_source - the output from Encoder
+        trg_mask:
+            target mask to prevent the decoder from "cheating" by paying attention to tokens that are "ahead" of the one it is currently processing as it processes all tokens in the target sentence in parallel
+        src_mask:
+            source mask is used to prevent the multi-head attention layer from attending to <pad> tokens within the source sentence.
+
+        Return
+        ----------
+        trg: [batch size, trg len, hid dim]
+            the predicted token(s)
+        attention: [batch size, n heads, trg len, src len]
+            We will not use this for our case
+        """
         #trg = [batch size, trg len, hid dim]
         #enc_src = [batch size, src len, hid dim]
         #trg_mask = [batch size, 1, trg len, trg len]
@@ -398,17 +478,15 @@ class DecoderLayer(nn.Module):
         #self attention
         _trg, _ = self.self_attention(trg, trg, trg, trg_mask)
 
-        #dropout, residual connection and layer norm
+        #dropout, residual connection and layer norm (Add&Norm)
         trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
-            
         #trg = [batch size, trg len, hid dim]
             
         #encoder attention
         _trg, attention = self.encoder_attention(trg, enc_src, enc_src, src_mask)
         
         #dropout, residual connection and layer norm
-        trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))
-                    
+        trg = self.enc_attn_layer_norm(trg + self.dropout(_trg)) # update new target
         #trg = [batch size, trg len, hid dim]
         
         #positionwise feedforward
@@ -416,25 +494,29 @@ class DecoderLayer(nn.Module):
         
         #dropout, residual and layer norm
         trg = self.ff_layer_norm(trg + self.dropout(_trg))
-        
         #trg = [batch size, trg len, hid dim]
         #attention = [batch size, n heads, trg len, src len]
         
         return trg, attention
-###############################################################################
-"""
-SEQ2SEQ model - capture encoder and decoder + create masks
 
-- The src mask is created by checking where the source sequence is not equal to a <pad> token. It is 1 where the token is not a <pad> token and 0 when it is. It is then unsqueezed so it can be correctly broadcast when applying the mask to the energy, which of shape [batch size, n heads, seq len, seq len].
-- The trg mask:
-    + First, we create a mask for the <pad> tokens, as we did for the source mask.
-    + Next, we create a "subsequent" mask, trg_sub_mask, using torch.tril.
-        This creates a diagonal matrix where the elements above the diagonal will be zero and the elements below the diagonal will be set to whatever the input tensor is
-        This shows what each target token (row) is allowed to look at (column). The first target token has a mask of [1, 0, 0, 0, 0] which means it can only look at the first target token. The second target token has a mask of [1, 1, 0, 0, 0] which it means it can look at both the first and second target tokens.
-- After the masks are created, they used with encoder and decoder along with the src and target sentence to get our predicted target sentence, utput, along withthe decoder's attemntion over the src sentence
-"""
+###############################################################################
 class Seq2Seq(nn.Module):
     def __init__(self, encoder, decoder, src_pad_idx, trg_pad_idx, device):
+        """Seq2Seq encapsulates the encoder and decoder and handle the creation of masks (for src and trg)
+
+        Parameters
+        ----------
+        encoder:
+            the Encoder layer
+        decoder:
+            the Decoder layer
+        src_pad_idx:
+
+        trg_pad_idx:
+
+        device:
+            cpu or gpu
+        """
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -443,35 +525,73 @@ class Seq2Seq(nn.Module):
         self.device = device
     
     def make_src_mask(self, src):
-        #src = [batch size, src len]
+        """Making input source mask by checking where the source sequence is not equal to a <pad> token
+            It is 1 where the token is not a <pad> token and 0 when it is
         
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        Parameters
+        ----------
+        src: [batch size, src len]
+            input training tokenized source sentence(s)
 
+        Return
+        ----------
+        src_mask: [batch size, 1, 1, src len]
+            mask of the input source
+        """
+        #src = [batch size, src len]
+    
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
         #src_mask = [batch size, 1, 1, src len]
 
         return src_mask
     
     def make_trg_mask(self, trg):
-        
+        """Making a target mask similar to srouce mask. Then we create a subsequence mask trg_sub_mask.
+            This creates a diagonal matrix where the elements above the diagonal will be 0 and the elements below the diagonal will be set to
+            whatever the input tensor is.
+
+        Parameters
+        ----------
+        trg: [batch size, trg len]
+            target tokens/labels
+
+        Return
+        ----------
+        trg_mask: [batch size, 1, trg len, trg len]   
+            mask of the target label
+        """
         #trg = [batch size, trg len]
         
         trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(2)
-        
         #trg_pad_mask = [batch size, 1, 1, trg len]
         
         trg_len = trg.shape[1]
-        
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device = self.device)).bool()
-        
+
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device = self.device)).bool()        
         #trg_sub_mask = [trg len, trg len]
             
         trg_mask = trg_pad_mask & trg_sub_mask
-        
         #trg_mask = [batch size, 1, trg len, trg len]
         
         return trg_mask
 
     def forward(self, src, trg):
+        """Feed-forward function of the Seq2Seq
+
+        Parameters
+        ----------
+        src: [batch size, src len]
+            input source (to Encoder)
+        trg: [batch size, trg len]
+            output label (from Decoder)
+
+        Return
+        ----------
+        output: [batch size, trg len, output dim]
+            output prediction
+        attention: [batch size, n heads, trg len, src len]
+            we will not care about this in our case
+        """
         #src = [batch size, src len]
         #trg = [batch size, trg len]
                 
