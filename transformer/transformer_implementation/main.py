@@ -51,8 +51,6 @@ dec = Decoder(OUTPUT_DIM,
               DEC_DROPOUT, 
               device)
 
-
-
 SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
 TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
@@ -62,8 +60,6 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 print(f'The model has {count_parameters(model):,} trainable parameters')
-
-
 
 def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:

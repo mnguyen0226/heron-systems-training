@@ -45,33 +45,62 @@ ENCODER LAYER:
 """
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length = 100):
-        """Encoder wrapper for Transformer: preprocessing 
-
+        """Encoder wrapper for Transformer: preprocessing the input data, call EncoderLayer, and provide output
+        
+        Parameters
+        ----------
+        input_dim:
+            input dim of the word vector, not to the EncoderLayer
+        hid_dim:
+            dim of the input to the EncoderLayer
+        n_layers:
+            number of layers of the EncoderLayer
+        n_heads:
+            number of heads of the Attention
+        pf_dim:
+            feed_forward input dim?
+        dropout:
+            dropout rate
+        device:
+            CPU or GPU
+        max_length:
+            position embedding has a vocab size of 100, which means out model can accept sentences up to 100 tokens long.
         """
         super().__init__()
         self.device = device 
-        self.tok_embedding = nn.Embedding(input_dim, hid_dim) # input, output
-        self.pos_embedding = nn.Embedding(max_length, hid_dim) # input, output
+        self.tok_embedding = nn.Embedding(num_embeddings=input_dim, embedding_dim=hid_dim) # input, output
+        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim) # input, output
 
         # this is submodule that can be repeat 6 times
         self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
         self.dropout = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device) # sqrt(d_model). This is a hidden dim size.
 
     def forward(self, src, src_mask):
-        # src = [batch_size, src_len]
-        # src_mask = [batch_size, 1,1, src_len]
+        """Feed-forward function of Encoder
 
+        Parameters
+        ----------
+        src: [batch_size, src_len]
+            src tokenized input SRC_PAD_IDX 
+        src_mask: [batch_size, 1, 1, src_len]
+            masked src but allow to ignore <pad> during training in the tokenized vector since it does not provide any value
+        
+        Return
+        ----------
+        src: [batch_size, src_len, hid_dim]
+            position-encoded & embedded output of the encoder layer. This will be fetch into the decoder
+        """
         batch_size = src.shape[0]
         src_len = src.shape[1]
 
         # positional vector
         pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-
         # pos = [batch_size, src_len]
-        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
 
+        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)) # have to dropout to get the same dim in the Encoder Layer
         # src = [batch_size, src_len, hid_dim]
+
         for layer in self.layers:
             src = layer(src, src_mask)
         # src = [batch_size, src_len, hid_dim]
@@ -88,31 +117,58 @@ The multihead attention layer is used by the encoder layer to attend to the srou
 """
 class EncoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+        """ EncoderLayer of the Encoder of Transformer contains Multi-Head Attention, Add&Normal, Feed-forward, Add&Norm
+
+        Parameters
+        ----------
+        hid_dim: 
+            input hidden dim from the processed positioned-encoded & embedded vectorized input
+        n_heads:
+            number of heads for the attention mechanism
+        pf_dim:
+            input feed-forward dim
+        dropout:
+            dropout rate
+        device:
+            cpu or gpu
+        """
         super().__init__()
-        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
-        self.ff_layer_norm = nn.LayerNorm(hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.self_attn_layer_norm = nn.LayerNorm(hid_dim) # initialized the norm for attn, dim reserved
+        self.ff_layer_norm = nn.LayerNorm(hid_dim) # initialized the norm for feed forward, dim reserved
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device) 
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout) # dropout rate 0.1 for Encoder
     
     def forward(self, src, src_mask):
+        """Feed-forward layer for then Encoder Layer
+
+        Parameters
+        ----------
+        src: [batch size, src len, hid dim]
+            src tokenized input SRC_PAD_IDX 
+        src_mask: [batch_size, 1, 1, src_len]
+            masked src but allow to ignore <pad> during training in the tokenized vector since it does not provide any value
+        
+        Return
+        ----------
+        src: [batch_size, src_len, hid_dim]
+            position-encoded & embedded output of the encoder layer. This will be fetch into the decoder
+        """
         #src = [batch size, src len, hid dim]
         #src_mask = [batch size, 1, 1, src len] 
 
-        #self attention         #_src = [batch size, query len, hid dim]
-        _src, _ = self.self_attention(src, src, src, src_mask) # not using the attention result
+        #self attention => use the feed forward of the MultiHeadAttentionLayer        #_src = [batch size, query len, hid dim]
+        _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask) # not using the attention result
 
-        #dropout, residual connection and layer norm
-        src = self.self_attn_layer_norm(src + self.dropout(_src))
-
+        #dropout, add residual connection and layer norm
+        src = self.self_attn_layer_norm(src + self.dropout(_src)) # have to dropout _src to have the same rate as src
         #src = [batch size, src len, hid dim]
 
         #positionwise feedforward
-        _src = self.positionwise_feedforward(src)
+        _src = self.positionwise_feedforward(src) # update input
 
-        #dropout, residual and layer norm
+        #dropout, add residual and layer norm
         src = self.ff_layer_norm(src + self.dropout(_src))
-        
         #src = [batch size, src len, hid dim]
 
         return src
