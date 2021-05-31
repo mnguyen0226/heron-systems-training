@@ -16,8 +16,8 @@ import random
 import math
 import time
 
-from encoder import MultiHeadAttentionLayer
-from encoder import PositionwiseFeedforwardLayer
+from utils.encoder import MultiHeadAttentionLayer
+from utils.encoder import PositionwiseFeedforwardLayer
 
 class Decoder(nn.Module):
     def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length=100):
