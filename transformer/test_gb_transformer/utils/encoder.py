@@ -48,8 +48,7 @@ class Encoder(nn.Module):
         self.layers = nn.ModuleList([GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
         self.dropout = nn.Dropout(dropout)
         # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device) # sqrt(d_model)
-        self.scale = hid_dim ** 0.5
-
+        self.scale = hid_dim ** 0.5 # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(self, src, src_mask):
         """Forwards function for the Encoder
@@ -250,7 +249,7 @@ class MultiHeadAttentionLayer(nn.Module):
 
         self.dropout = nn.Dropout(dropout) 
         # self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(device) # d_k = head_dim, will be hid_dim if n_heads == 1
-        self.scale = hid_dim ** 0.5
+        self.scale = hid_dim ** 0.5 # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
 
     def forward(self, query, key, value, mask=None):

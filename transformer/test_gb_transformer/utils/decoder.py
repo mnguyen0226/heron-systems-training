@@ -58,7 +58,7 @@ class Decoder(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
         # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
-        self.scale = hid_dim ** 0.5
+        self.scale = hid_dim ** 0.5 # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
         """Feed-forward of Decoder
