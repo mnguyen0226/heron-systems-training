@@ -1,6 +1,6 @@
 from main import *
 from utils.preprocess import *
-from utils.model import *
+from utils.seq2seq import *
 
 # This script basically for testing actual transation and analyze the attention matrix
 
