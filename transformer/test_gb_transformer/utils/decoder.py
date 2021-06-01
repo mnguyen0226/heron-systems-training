@@ -16,7 +16,7 @@ import random
 import math
 import time
 
-from utils.encoder import MultiHeadAttentionLayer
+from utils.encoder import LNorm, MultiHeadAttentionLayer
 from utils.encoder import PositionwiseFeedforwardLayer
 from utils.encoder import Gate
 
@@ -57,7 +57,8 @@ class Decoder(nn.Module):
         self.fc_out = nn.Linear(in_features=hid_dim, out_features=output_dim)
 
         self.dropout = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+        # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+        self.scale = hid_dim ** 0.5
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
         """Feed-forward of Decoder
@@ -130,17 +131,20 @@ class GatedDecoderLayer(nn.Module):
             cpu or gpu        
         """
         super().__init__()
-        self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        # self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        self.first_layer_norm = LNorm(normalized_shape=hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         # self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
         self.first_gate = Gate(hid_dim=hid_dim)
 
-        self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        # self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        self.second_layer_norm = LNorm(normalized_shape=hid_dim)
         self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         # self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
         self.second_gate = Gate(hid_dim=hid_dim)
 
-        self.third_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        # self.third_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        self.third_layer_norm = LNorm(normalized_shape=hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         # self.third_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
         self.third_gate = Gate(hid_dim=hid_dim)

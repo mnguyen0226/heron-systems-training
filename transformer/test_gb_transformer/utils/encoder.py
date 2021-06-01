@@ -47,7 +47,9 @@ class Encoder(nn.Module):
 
         self.layers = nn.ModuleList([GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
         self.dropout = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device) # sqrt(d_model)
+        # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device) # sqrt(d_model)
+        self.scale = hid_dim ** 0.5
+
 
     def forward(self, src, src_mask):
         """Forwards function for the Encoder
@@ -79,39 +81,61 @@ class Encoder(nn.Module):
 
         return src
 
+class LNorm(nn.Module):
+    def __init__(self, normalized_shape):
+        """Layer Normalization for both Encoder & Decoder
+
+        Parameters
+        ----------
+        normalized_shape:
+            input shape (hid_dim) of the Encoder and Decoder
+        """
+        super().__init__()
+        self.layer_norm = nn.LayerNorm(normalized_shape=normalized_shape)
+
+    def forward(self, x):
+        """Feed-forward function of the Layer Normalization function
+
+        Parameters
+        ----------
+        x:
+            input dimension (hid_dim) of the Layer Normalization of the Encoder & Decoder
+        """
+        x = self.layer_norm(x)
+        return x
+
 class Gate(nn.Module):
     def __init__(self, hid_dim):
+        """Gate Layer for both the Encoder & Decoder
+
+        Parameters
+        ----------
+        hid_dim:
+            input hidden dimension (of the Encoder & Decoder)
+        """
         super().__init__()
         self.gru = nn.GRU(input_size = hid_dim, hidden_size=hid_dim)
 
-    # def forward(self, output, original_input):
-    #     """
-    #     output.shape = original_input.shape = [batch size, src len, hid dim]
-    #     """
-    #     gate_output, hidden = self.gru(output, original_input)
-
-    #     return gate_output, hidden
-
     def forward(self, output, original_input):
-        """
+        """Feed-forward function of the Gate Layer
+
+        Parameters
+        ----------
+        output:
+            the output from either Attention Layer or Positionwise Layer
+        
+
         output.shape = original_input.shape = [batch size, src len, hid dim]
         """
         b,f,s = original_input.shape
 
         # Permute the x and y so that the shape is now [B,S,F]
-        # original_input_permuted = original_input.permute(0,2,1)
-        # output_permuted = output.permute(0,2,1)
-        original_input_permuted = original_input
-        output_permuted = output
-
+        original_input_permuted = original_input.permute(0,2,1)
+        output_permuted = output.permute(0,2,1)
 
         # We really just need the GRU to weight between the input and the self attention. So we
         # resize to be [B * S, 1, F] so that we essentially have a massive batch of samples with
         # sequence length 1 and F features        
-
-        # print(f"TESTING: {output_permuted.shape} & {original_input_permuted.shape}")
-        # print(f"TESTING: {torch.reshape(output_permuted, (1, b*f, s)).shape} & {torch.reshape(original_input_permuted, (1, b*f, s)).contiguous().shape}")
-
         gate_output, hidden = self.gru(
             torch.reshape(output_permuted, (1, b*f, s)),
             torch.reshape(original_input_permuted, (1, b*f, s)).contiguous(),
@@ -138,12 +162,14 @@ class GatedEncoderLayer(nn.Module):
             cpu or gpu
         """
         super().__init__()
-        self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        # self.first_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        self.first_layer_norm = LNorm(normalized_shape=hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         # self.first_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
         self.first_gate = Gate(hid_dim=hid_dim)
 
-        self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        # self.second_layer_norm = nn.LayerNorm(normalized_shape=hid_dim)
+        self.second_layer_norm = LNorm(normalized_shape=hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         # self.second_gate = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
         self.second_gate = Gate(hid_dim=hid_dim)
@@ -223,7 +249,9 @@ class MultiHeadAttentionLayer(nn.Module):
         self.fc_o = nn.Linear(in_features=hid_dim, out_features=hid_dim) # apply linear transformation
 
         self.dropout = nn.Dropout(dropout) 
-        self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(device) # d_k = head_dim, will be hid_dim if n_heads == 1
+        # self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(device) # d_k = head_dim, will be hid_dim if n_heads == 1
+        self.scale = hid_dim ** 0.5
+
 
     def forward(self, query, key, value, mask=None):
         """Feed-forward layer for the attention mechanism
@@ -321,6 +349,34 @@ class PositionwiseFeedforwardLayer(nn.Module):
         x = self.fc_2(x)
 
         return x
+
+    # def forward(self, x):
+    #     """Feedforward function for the PFF layer
+
+    #     Parameters
+    #     ----------
+    #     x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+    #         input from the second layer norm
+        
+    #     Return
+    #     ---------- 
+    #     x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+    #         output to the second gate layer
+    #     """
+    #     b, f, s = x.shape
+
+    #     # Change the order of dimensions to be [B, S, F]
+    #     x_permuted = x.permute(0, 2, 1)
+    #     reshaped_x = torch.reshape(x_permuted, (b * f, s))
+
+    #     #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+        
+    #     x = self.dropout(torch.relu(self.fc_1(reshaped_x))) # relu then dropout to contain same infor
+
+    #     #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
+    #     x = self.fc_2(x)
+
+    #     return x.view(b,s,f).permute(0,2,1)
 
 def test_encoder():
     print("Running encoder")
