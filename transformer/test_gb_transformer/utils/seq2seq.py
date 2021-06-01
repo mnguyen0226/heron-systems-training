@@ -131,6 +131,7 @@ class Seq2Seq(nn.Module):
         #attention = [batch size, n heads, trg len, src len]
         
         return output, attention
+        
 ###############################################################################
 def test_seq2seq():
     print("Runnning Seq2Seq")
