@@ -2,8 +2,13 @@ from torchtext.data.metrics import bleu_score
 from main import *
 from inference import *
 
-# This script calculate the BLEU values for the Transformer
+"""This script calculate the BLEU values for the Transformer
 
+About BLEU:
+- BLEU is the metric that specifically designed for measuring the quality of trhe translation
+- BLEU looks at the overlap in the predicted and actual target sequences in terms of their n-grams
+- It will give us a number between 0 & 1 for each sequence, where 1 means there is perfect overlap - perfect translation
+"""
 def calculate_bleu(data, src_field, trg_field, model, device, max_len = 50):
     """Calculate the BLEU value
 
