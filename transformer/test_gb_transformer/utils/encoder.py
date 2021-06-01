@@ -349,34 +349,6 @@ class PositionwiseFeedforwardLayer(nn.Module):
 
         return x
 
-    # def forward(self, x):
-    #     """Feedforward function for the PFF layer
-
-    #     Parameters
-    #     ----------
-    #     x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-    #         input from the second layer norm
-        
-    #     Return
-    #     ---------- 
-    #     x: [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-    #         output to the second gate layer
-    #     """
-    #     b, f, s = x.shape
-
-    #     # Change the order of dimensions to be [B, S, F]
-    #     x_permuted = x.permute(0, 2, 1)
-    #     reshaped_x = torch.reshape(x_permuted, (b * f, s))
-
-    #     #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-        
-    #     x = self.dropout(torch.relu(self.fc_1(reshaped_x))) # relu then dropout to contain same infor
-
-    #     #x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-    #     x = self.fc_2(x)
-
-    #     return x.view(b,s,f).permute(0,2,1)
-
 def test_encoder():
     print("Running encoder")
 
