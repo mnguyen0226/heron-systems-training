@@ -29,33 +29,47 @@ gated_transformers_enc_layers = GATED_ENC_LAYERS
 gated_transformers_dec_layers = GATED_DEC_LAYERS
 
 def run_original_transformers():
-    # print(origin_transformers_enc_n_heads)
-    # print(origin_transformers_dec_n_heads)
-    # print(origin_transformers_enc_layers)
-    # print(origin_transformers_dec_layers)
-
     origin_transformers_training_loss, origin_transformers_validating_loss, origin_transformers_training_PPL, origin_transformers_validating_PPL = origin_transformers_main()
+
+    # for testing
     print(origin_transformers_training_loss)
     print(origin_transformers_validating_loss)
     print(origin_transformers_training_PPL)
     print(origin_transformers_validating_PPL)
 
 def run_gated_transformers():
-    # print(gated_transformers_enc_n_heads)
-    # print(gated_transformers_dec_n_heads)
-    # print(gated_transformers_enc_layers)
-    # print(gated_transformers_dec_layers)
-
     gated_transformers_training_loss, gated_transformers_validating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
+
+    # for testing
     print(gated_transformers_training_loss)
     print(gated_transformers_validating_loss)
     print(gated_transformers_training_PPL)
     print(gated_transformers_training_PPL)
 
-# class TestGatedTransformers:
-#     def test
-# run the two function above then pytest
+# run main() of the two transformers
+run_gated_transformers()
+run_original_transformers()
 
-if __name__ == "__main__":
-    run_gated_transformers()
-    run_original_transformers()
+print(f"The original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)") 
+print(f"The gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)")
+
+class TestGatedTransformers:
+    def test_training_loss(self):
+        """Validated the training loss of gated transformers < original transformers'
+        """
+        assert gated_transformers_training_loss < origin_transformers_training_loss
+
+    def test_validating_loss(self):
+        """Validates the testing loss of gated transformers < original transformers'
+        """
+        assert gated_transformers_validating_loss < origin_transformers_validating_loss
+
+    def test_training_PPL(self):
+        """Validates the training PPL of gated transformers < original transformers'
+        """
+        assert gated_transformers_training_PPL < origin_transformers_training_PPL
+    
+    def test_validating_PPL(self):
+        """Validates the testing PPL of gated transfomers < original transformers' 
+        """
+        assert gated_transformers_validating_PPL < origin_transformers_validating_PPL
