@@ -30,10 +30,10 @@ Credit: https://github.com/bentrevett/pytorch-seq2seq
 - 1/ Original Transfomers - Attention Is All You Need
     - Paper: https://arxiv.org/abs/1706.03762
     - Architecture: Attention, Transformers
-    - Code
+    - Code: https://github.com/mnguyen0226/heron-systems-training/tree/main/transformer/transformer_implementation
 - 2/ Gated Transformers-XL - Stabilizing Transformers for Reinforcement Learning
     - Paper: https://arxiv.org/abs/1910.06764
     - Architecture: Attention, Transformers-XL, GRU
-    - Code:
+    - Code: https://github.com/mnguyen0226/heron-systems-training/tree/main/transformer/test_gb_transformer
 
 ## Pytest API:
