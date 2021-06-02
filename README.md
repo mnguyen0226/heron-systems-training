@@ -10,10 +10,18 @@ Credit: https://github.com/bentrevett/pytorch-seq2seq
     - Paper: https://arxiv.org/abs/1409.3215
     - Architecture: LSTM
     - Code: https://github.com/mnguyen0226/heron-systems-training/tree/main/rnn/text_translation/seq2seq/seq2seq_with_nn
+    ```
+    python ./main.py
+    python ./test_model.py
+    ```
 - 2/ Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation
     - Paper: https://arxiv.org/abs/1406.1078
     - Architecture: RNN, GRUs
     - Code: https://github.com/mnguyen0226/heron-systems-training/tree/main/rnn/text_translation/seq2seq/statistical_machine_translation
+    ```
+    python ./main.py
+    python ./test_model.py
+    ```
 - 3/ Neural Machine Translation by Jointly Learning to Align Translate
     - Paper: https://arxiv.org/abs/1409.0473
     - Architecture: Attention
