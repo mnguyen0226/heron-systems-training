@@ -224,8 +224,6 @@ valid_loss = 0
 def gated_transformers_main():
     """Run Training and Evaluating procedure
     """
-    print("Running model.py")
-
     best_valid_loss = float('inf')
 
     for epoch in range(N_EPOCHS):

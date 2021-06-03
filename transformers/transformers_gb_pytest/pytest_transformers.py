@@ -23,15 +23,23 @@ gated_transformers_dec_layers = GATED_DEC_LAYERS
 # results from Transformers "Attention Is All You Need"
 print(f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)") 
 print("------------------------------")
-print("Training Test Bench Transformers")
+print("Training Test Bench Transformers Training Set")
+print("------------------------------")
 origin_transformers_training_loss, origin_transformers_validating_loss, origin_transformers_training_PPL, origin_transformers_validating_PPL = origin_transformers_main()
+print("\n------------------------------")
+print("Training Test Bench Transformers Testing Set")
+print("------------------------------")
 origin_transformers_testing_loss, origin_transformers_testing_PPL = test_origin_transformers_model()
 
 # results from Gated Transformers 
 print(f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)")
 print("------------------------------")
-print("Traininng Gated Transformers")
-gated_transformers_training_loss, gated_transformers_validating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
+print("Traininng Gated Transformers Training Set")
+print("------------------------------")
+gated_transformers_training_loss, gated_transfoers_rmvalidating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
+print("------------------------------")
+print("Traininng Gated Transformers Testing Set")
+print("------------------------------")
 gated_transformers_testing_loss, gated_transformers_testing_PPL = test_gated_transformers_model()
 
 class TestGatedTransformersTrainingSet:
