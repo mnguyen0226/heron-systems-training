@@ -144,7 +144,7 @@ class EncoderLayer(nn.Module):
         #self attention => use the feed forward of the MultiHeadAttentionLayer        #_src = [batch size, query len, hid dim]
         _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask) # not using the attention result
 
-        print(f"TESTING {_src.shape} & {src.shape}")
+        # print(f"TESTING {_src.shape} & {src.shape}")
         #dropout, add residual connection and layer norm
         src = self.self_attn_layer_norm(src + self.dropout(_src)) # have to dropout _src to have the same rate as src
         #src = [batch size, src len, hid dim]

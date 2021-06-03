@@ -7,5 +7,7 @@ def test_model():
 
     print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
 
+    return test_loss, math.exp(test_loss)
+
 if __name__ == "__main__":
     test_model()
