@@ -1,6 +1,6 @@
 from gated_transformers.main import *
 
-def test_model():
+def test_gated_transformers_model():
     """Testing trained Gated Transformer
     """
     model.load_state_dict(torch.load('tut6-model.pt', map_location=torch.device('cpu')))

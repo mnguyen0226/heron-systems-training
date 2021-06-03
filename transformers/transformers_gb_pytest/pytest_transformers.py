@@ -23,23 +23,12 @@ print(f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder
 print("------------------------------")
 print("Training Test Bench Transformers")
 origin_transformers_training_loss, origin_transformers_validating_loss, origin_transformers_training_PPL, origin_transformers_validating_PPL = origin_transformers_main()
-# for testing
-print(origin_transformers_training_loss)
-print(origin_transformers_validating_loss)
-print(origin_transformers_training_PPL)
-print(origin_transformers_validating_PPL)
 
 # results from Gated Transformers 
 print(f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)")
 print("------------------------------")
 print("Traininng Gated Transformers")
 gated_transformers_training_loss, gated_transformers_validating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
-
-# for testing
-print(gated_transformers_training_loss)
-print(gated_transformers_validating_loss)
-print(gated_transformers_training_PPL)
-print(gated_transformers_validating_PPL)
 
 class TestGatedTransformersTrainingSet:
     def test_training_loss(self):
@@ -67,6 +56,6 @@ class TestGatedTransformersTrainingSet:
         assert Decimal(gated_transformers_validating_PPL) < Decimal(origin_transformers_validating_PPL)
 
 
-# class TestGatedTransformersTestingSet:
-#     def test_testing_loss(self):
-#         assert Decimal()
+class TestGatedTransformersTestingSet:
+    def test_testing_loss(self):
+        assert Decimal()
