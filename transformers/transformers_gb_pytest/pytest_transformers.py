@@ -4,9 +4,10 @@
 
 from gated_transformers.test_model import test_gated_transformers_model
 from original_transformers.test_model import test_origin_transformers_model
-import pytest
 from gated_transformers.main import *
 from original_transformers.main import *
+
+import pytest
 from decimal import Decimal
 
 # information for printing wise
@@ -28,18 +29,19 @@ print("Training Test Bench Transformers Training Set")
 print("---------------------------------------------")
 origin_transformers_training_loss, origin_transformers_validating_loss, origin_transformers_training_PPL, origin_transformers_validating_PPL = origin_transformers_main()
 
-print("\n------------------------------------------")
+print("\n--------------------------------------------")
 print("Training Test Bench Transformers Testing Set")
 print("--------------------------------------------")
 origin_transformers_testing_loss, origin_transformers_testing_PPL = test_origin_transformers_model()
 
 # results from Gated Transformers 
+print("\n------------------------------------------------------------------------------------------")
 print(f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)")
 
 print("-----------------------------------------")
 print("Traininng Gated Transformers Training Set")
 print("-----------------------------------------")
-gated_transformers_training_loss, gated_transfoers_rmvalidating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
+gated_transformers_training_loss, gated_transformers_validating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
 
 print("----------------------------------------")
 print("Traininng Gated Transformers Testing Set")
