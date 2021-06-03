@@ -3,7 +3,7 @@ from gated_transformers.main import *
 def test_gated_transformers_model():
     """Testing trained Gated Transformer
     """
-    model.load_state_dict(torch.load('tut6-model.pt', map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load('gated_transformers/tut6-model.pt', map_location=torch.device('cpu')))
 
     test_loss = evaluate(model, test_iterator, criterion)
 
