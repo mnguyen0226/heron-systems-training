@@ -22,66 +22,96 @@ gated_transformers_enc_layers = GATED_ENC_LAYERS
 gated_transformers_dec_layers = GATED_DEC_LAYERS
 
 # results from Transformers "Attention Is All You Need"
-print(f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)") 
+print(
+    f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)"
+)
 
 print("---------------------------------------------")
 print("Training Test Bench Transformers Training Set")
 print("---------------------------------------------")
-origin_transformers_training_loss, origin_transformers_validating_loss, origin_transformers_training_PPL, origin_transformers_validating_PPL = origin_transformers_main()
+(
+    origin_transformers_training_loss,
+    origin_transformers_validating_loss,
+    origin_transformers_training_PPL,
+    origin_transformers_validating_PPL,
+) = origin_transformers_main()
 
 print("\n--------------------------------------------")
 print("Training Test Bench Transformers Testing Set")
 print("--------------------------------------------")
-origin_transformers_testing_loss, origin_transformers_testing_PPL = test_origin_transformers_model()
+(
+    origin_transformers_testing_loss,
+    origin_transformers_testing_PPL,
+) = test_origin_transformers_model()
 
-# results from Gated Transformers 
-print("\n------------------------------------------------------------------------------------------")
-print(f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)")
+# results from Gated Transformers
+print(
+    "\n------------------------------------------------------------------------------------------"
+)
+print(
+    f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
+)
 
 print("-----------------------------------------")
 print("Traininng Gated Transformers Training Set")
 print("-----------------------------------------")
-gated_transformers_training_loss, gated_transformers_validating_loss, gated_transformers_training_PPL, gated_transformers_validating_PPL = gated_transformers_main()
+(
+    gated_transformers_training_loss,
+    gated_transformers_validating_loss,
+    gated_transformers_training_PPL,
+    gated_transformers_validating_PPL,
+) = gated_transformers_main()
 
 print("----------------------------------------")
 print("Traininng Gated Transformers Testing Set")
 print("----------------------------------------")
-gated_transformers_testing_loss, gated_transformers_testing_PPL = test_gated_transformers_model()
+(
+    gated_transformers_testing_loss,
+    gated_transformers_testing_PPL,
+) = test_gated_transformers_model()
+
 
 class TestGatedTransformersTrainingSet:
     def test_training_loss(self):
-        """Validated the training loss of gated transformers < original transformers'
-        """
+        """Validated the training loss of gated transformers < original transformers'"""
         global gated_transformers_training_loss, origin_transformers_training_loss
-        assert Decimal(gated_transformers_training_loss) < Decimal(origin_transformers_training_loss)
+        assert Decimal(gated_transformers_training_loss) < Decimal(
+            origin_transformers_training_loss
+        )
 
     def test_validating_loss(self):
-        """Validates the validating loss of gated transformers < original transformers'
-        """
+        """Validates the validating loss of gated transformers < original transformers'"""
         global gated_transformers_validating_loss, origin_transformers_validating_loss
-        assert Decimal(gated_transformers_validating_loss) <  Decimal(origin_transformers_validating_loss)
+        assert Decimal(gated_transformers_validating_loss) < Decimal(
+            origin_transformers_validating_loss
+        )
 
     def test_training_PPL(self):
-        """Validates the training PPL of gated transformers < original transformers'
-        """
+        """Validates the training PPL of gated transformers < original transformers'"""
         global gated_transformers_training_PPL, origin_transformers_training_PPL
-        assert Decimal(gated_transformers_training_PPL) < Decimal(origin_transformers_training_PPL)
-    
+        assert Decimal(gated_transformers_training_PPL) < Decimal(
+            origin_transformers_training_PPL
+        )
+
     def test_validating_PPL(self):
-        """Validates the validating PPL of gated transfomers < original transformers' 
-        """
+        """Validates the validating PPL of gated transfomers < original transformers'"""
         global gated_transformers_validating_PPL, origin_transformers_validating_PPL
-        assert Decimal(gated_transformers_validating_PPL) < Decimal(origin_transformers_validating_PPL)
+        assert Decimal(gated_transformers_validating_PPL) < Decimal(
+            origin_transformers_validating_PPL
+        )
+
 
 class TestGatedTransformersTestingSet:
     def test_testing_loss(self):
-        """Validates the testing loss of the gated transformers < origin transformers'
-        """
+        """Validates the testing loss of the gated transformers < origin transformers'"""
         global gated_transformers_testing_loss, origin_transformers_testing_loss
-        assert Decimal(gated_transformers_testing_loss) < Decimal(origin_transformers_testing_loss)
-    
+        assert Decimal(gated_transformers_testing_loss) < Decimal(
+            origin_transformers_testing_loss
+        )
+
     def test_testing_PPL(self):
-        """Validates the testing PPL of the gated transformers < origin transformers'
-        """
+        """Validates the testing PPL of the gated transformers < origin transformers'"""
         global gated_transformers_testing_PPL, origin_transformers_testing_PPL
-        assert Decimal(gated_transformers_testing_PPL) < Decimal(origin_transformers_testing_PPL)
+        assert Decimal(gated_transformers_testing_PPL) < Decimal(
+            origin_transformers_testing_PPL
+        )
