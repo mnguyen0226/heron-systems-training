@@ -76,9 +76,3 @@ train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
     (train_data, valid_data, test_data), 
      batch_size = BATCH_SIZE,
      device = device)
-
-def test_preprocess():
-    print("Running preprocess")
-
-if __name__ == "__main__":
-    test_preprocess()

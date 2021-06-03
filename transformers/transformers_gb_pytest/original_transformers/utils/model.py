@@ -616,9 +616,3 @@ class Seq2Seq(nn.Module):
         #attention = [batch size, n heads, trg len, src len]
         
         return output, attention
-###############################################################################
-def model():
-    print("Runnning Model")
-
-if __name__ == "__main__":
-    model()

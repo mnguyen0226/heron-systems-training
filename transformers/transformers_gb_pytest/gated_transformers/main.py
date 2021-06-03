@@ -249,5 +249,3 @@ def gated_transformers_main():
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
-# if __name__ == "__main__":
-#     main()

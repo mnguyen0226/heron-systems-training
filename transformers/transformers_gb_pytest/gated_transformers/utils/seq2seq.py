@@ -132,9 +132,3 @@ class Seq2Seq(nn.Module):
         
         return output, attention
         
-###############################################################################
-def test_seq2seq():
-    print("Runnning Seq2Seq")
-
-if __name__ == "__main__":
-    test_seq2seq()

@@ -206,8 +206,3 @@ class GatedDecoderLayer(nn.Module):
 
         return third_gate_output, attention
 
-def test_decoder():
-    print("Running Decoder")
-
-if __name__ == "__main__":
-    test_decoder()
