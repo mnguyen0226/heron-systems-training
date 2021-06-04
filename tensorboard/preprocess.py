@@ -14,3 +14,13 @@ def create_model():
         tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Dense(10, activateion = 'softmax')
     ])
+
+def model_fit():
+    model = create_model()
+    model.compile(optimizer='adam', loss = 'sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+if __name__ == "__main__":
+    model_fit()
