@@ -5,7 +5,13 @@ import torch
 import torch.nn as nn
 import math
 from utils.original_transformers.model import Encoder, Decoder, Seq2Seq
-from utils.original_transformers.preprocess import SRC, TRG, device, train_iterator, valid_iterator
+from utils.original_transformers.preprocess import (
+    SRC,
+    TRG,
+    device,
+    train_iterator,
+    valid_iterator,
+)
 from typing import Tuple
 
 
@@ -22,9 +28,13 @@ DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
 
-enc = Encoder(INPUT_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device)
+enc = Encoder(
+    INPUT_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device
+)
 
-dec = Decoder(OUTPUT_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device)
+dec = Decoder(
+    OUTPUT_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device
+)
 
 # Define whole Seq2Seq encapsulating model
 SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
@@ -246,7 +256,11 @@ def origin_transformers_main() -> Tuple[float, float, float, float]:
             torch.save(model.state_dict(), "original-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}")
-        print(f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(
+            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
+        )
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)

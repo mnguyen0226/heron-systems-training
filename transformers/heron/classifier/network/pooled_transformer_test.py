@@ -152,7 +152,11 @@ def test_training(
     ],
 )
 def test_order_invariance(
-    nb_encoders: int, max_diff: float, nb_layer: int, linear_nb_hidden: int, nb_heads: int
+    nb_encoders: int,
+    max_diff: float,
+    nb_layer: int,
+    linear_nb_hidden: int,
+    nb_heads: int,
 ) -> None:
     """
 
@@ -227,7 +231,9 @@ def test_order_invariance(
 
         # Pass both batches through the network
         pred = torch.flatten(network({"input": batch}, {})[0]["out"].squeeze(-1))
-        s_pred = torch.flatten(network({"input": shuffled_batch}, {})[0]["out"].squeeze(-1))
+        s_pred = torch.flatten(
+            network({"input": shuffled_batch}, {})[0]["out"].squeeze(-1)
+        )
         assert all(
             np.isclose(pred, s_pred)
         ), f"Order Invariance Failed! Model differs by {torch.max(torch.abs(pred - s_pred))}"

@@ -1,10 +1,13 @@
 # Resource: https://docs.pytest.org/en/6.2.x/getting-started.html
 
+
 def func(x):
-    return x+1
+    return x + 1
+
 
 def test_answer():
     assert func(4) == 5
+
 
 def main():
     print("Running")
@@ -12,4 +15,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    test_answer() # pytest pytest_1 on terminal
+    test_answer()  # pytest pytest_1 on terminal

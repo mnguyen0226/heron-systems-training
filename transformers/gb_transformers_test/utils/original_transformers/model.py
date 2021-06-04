@@ -51,7 +51,10 @@ class Encoder(nn.Module):
 
         # this is submodule that can be repeat 6 times
         self.layers = nn.ModuleList(
-            [EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
         self.dropout = nn.Dropout(dropout)
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(
@@ -80,7 +83,9 @@ class Encoder(nn.Module):
         src_len = src.shape[1]
 
         # positional vector
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
         # pos = [batch_size, src_len]
 
         src = self.dropout(
@@ -96,7 +101,9 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """EncoderLayer of the Encoder of Transformer contains Multi-Head Attention, Add&Normal,
             Feed-forward, Add&Norm
 
@@ -121,7 +128,9 @@ class EncoderLayer(nn.Module):
             hid_dim
         )  # initialized the norm for feed forward, dim reserved
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+            hid_dim, pf_dim, dropout
+        )
         self.dropout = nn.Dropout(dropout)  # dropout rate 0.1 for Encoder
 
     def forward(
@@ -301,7 +310,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
             dropout rate: 0.1 for encoder
         """
         super().__init__()
-        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim)  # linear transformation
+        self.fc_1 = nn.Linear(
+            in_features=hid_dim, out_features=pf_dim
+        )  # linear transformation
         self.fc_2 = nn.Linear(
             in_features=pf_dim, out_features=hid_dim
         )  # linear transformation # make sure to conert back from pf_dim to hid_dim
@@ -321,7 +332,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
         x: [batch size, seq len, hid dim]
             output to Add&Norm Layer
         """
-        x = self.dropout(torch.relu(self.fc_1(x)))  # relu then dropout to contain same infor
+        x = self.dropout(
+            torch.relu(self.fc_1(x))
+        )  # relu then dropout to contain same infor
         # x = [batch size, seq len, pf dim] OR [batch size, src len, hid dim]
 
         x = self.fc_2(x)
@@ -378,12 +391,19 @@ class Decoder(nn.Module):
 
         self.device = device
 
-        self.tok_embedding = nn.Embedding(num_embeddings=output_dim, embedding_dim=hid_dim)
-        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
+        self.tok_embedding = nn.Embedding(
+            num_embeddings=output_dim, embedding_dim=hid_dim
+        )
+        self.pos_embedding = nn.Embedding(
+            num_embeddings=max_length, embedding_dim=hid_dim
+        )
 
         # DecoderLayer
         self.layers = nn.ModuleList(
-            [DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
 
         # Linear of the output
@@ -426,10 +446,14 @@ class Decoder(nn.Module):
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
         # pos = [batch size, trg len]
 
-        trg = self.dropout((self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos))
+        trg = self.dropout(
+            (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
+        )
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:
@@ -444,7 +468,9 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """DecoderLayer for the Decoder which contains of:
             + Masked Multi-Head Attention - "self-attention"
             + Add&Norm
@@ -630,7 +656,9 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
+        trg_sub_mask = torch.tril(
+            torch.ones((trg_len, trg_len), device=self.device)
+        ).bool()
         # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
@@ -638,7 +666,9 @@ class Seq2Seq(nn.Module):
 
         return trg_mask
 
-    def forward(self, src: Tuple[int, int], trg: Tuple[int, int]) -> Tuple[tuple, tuple]:
+    def forward(
+        self, src: Tuple[int, int], trg: Tuple[int, int]
+    ) -> Tuple[tuple, tuple]:
         """Feed-forward function of the Seq2Seq
 
         Parameters

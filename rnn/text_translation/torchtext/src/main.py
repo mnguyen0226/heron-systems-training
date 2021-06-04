@@ -29,7 +29,7 @@ def train(
     for _, (src, trg) in enumerate(iterator):
         print(f"TESTING src main {src.shape}")
         print(f"TESTING trg main {trg.shape}")
-        
+
         src, trg = src.to(device), trg.to(device)
 
         optimizer.zero_grad()

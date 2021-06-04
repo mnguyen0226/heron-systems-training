@@ -7,6 +7,7 @@ from adept.utils.util import DotDict
 
 from gamebreaker.classifier.network import CUSTOM_REGISTRY
 
+
 @pytest.mark.parametrize(
     "min_acc,nb_encoders,nb_heads,do_scale,max_diff,dropout",
     [
@@ -17,7 +18,12 @@ from gamebreaker.classifier.network import CUSTOM_REGISTRY
     ],
 )
 def test_gated_encoder(
-    min_acc: float, nb_encoders: int, nb_heads: int, do_scale: bool, max_diff: float, dropout: float
+    min_acc: float,
+    nb_encoders: int,
+    nb_heads: int,
+    do_scale: bool,
+    max_diff: float,
+    dropout: float,
 ) -> None:
     """
 
@@ -149,7 +155,9 @@ def test_gated_encoder(
         shuffled_batch = torch.clone(batch[:, :, rand_indices])
 
         # Pass both batches through the network
-        unshuffled_attn = network({"input": batch}, {})[1]["attention_output"][:, :, rand_indices]
+        unshuffled_attn = network({"input": batch}, {})[1]["attention_output"][
+            :, :, rand_indices
+        ]
         shuffled_attn = network({"input": shuffled_batch}, {})[1]["attention_output"]
 
         # Assert that the model makes the same choices regardless of the sequence ordering.
@@ -157,7 +165,9 @@ def test_gated_encoder(
         # by about 0.00001
         assert (
             torch.max(
-                torch.abs((torch.flatten(unshuffled_attn) - torch.flatten(shuffled_attn)))
+                torch.abs(
+                    (torch.flatten(unshuffled_attn) - torch.flatten(shuffled_attn))
+                )
             ).cpu()
             < max_diff
         ), f"Model is not order invariant!"

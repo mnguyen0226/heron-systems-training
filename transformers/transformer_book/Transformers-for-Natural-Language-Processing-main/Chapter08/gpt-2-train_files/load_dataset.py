@@ -20,23 +20,23 @@ def load_dataset(enc, path, combine, encoding=None):
         paths = glob.glob(path)
 
     token_chunks = []
-    raw_text = ''
+    raw_text = ""
     for path in tqdm.tqdm(paths):
-        if path.endswith('.npz'):
+        if path.endswith(".npz"):
             # Pre-encoded
             with np.load(path) as npz:
                 for item in npz.files:
                     token_chunks.append(npz[item])
         else:
             # Plain text
-            with open(path, 'r', encoding=encoding) as fp:
+            with open(path, "r", encoding=encoding) as fp:
                 raw_text += fp.read()
             if len(raw_text) >= combine:
                 tokens = np.stack(enc.encode(raw_text))
                 token_chunks.append(tokens)
-                raw_text = ''
+                raw_text = ""
             else:
-                raw_text += '<|endoftext|>'
+                raw_text += "<|endoftext|>"
     if raw_text:
         tokens = np.stack(enc.encode(raw_text))
         token_chunks.append(tokens)
@@ -72,12 +72,15 @@ class Sampler(object):
     def sample(self, length):
         assert length < self.total_size // len(
             self.chunks
-        ), "Dataset files are too small to sample {} tokens at a time".format(
-            length)
+        ), "Dataset files are too small to sample {} tokens at a time".format(length)
         while True:
             index = self.rs.randint(0, self.total_size - length - 1)
-            i = binary_search(lambda j: self.boundaries[j] > index, 0,
-                              len(self.boundaries) - 1) - 1
+            i = (
+                binary_search(
+                    lambda j: self.boundaries[j] > index, 0, len(self.boundaries) - 1
+                )
+                - 1
+            )
             if self.boundaries[i + 1] > index + length:
                 within_chunk = index - self.boundaries[i]
-                return self.chunks[i][within_chunk:within_chunk + length]
+                return self.chunks[i][within_chunk : within_chunk + length]

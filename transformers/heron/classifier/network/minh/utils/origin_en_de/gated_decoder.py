@@ -14,6 +14,7 @@ from gamebreaker.classifier.network.gated_encoder import Gate
 from gamebreaker.classifier.network.gated_encoder import LNorm
 from gamebreaker.classifier.network.gated_encoder import Projection
 
+
 class Decoder(nn.Module):
     def __init__(
         self,
@@ -44,7 +45,9 @@ class Decoder(nn.Module):
         self.projection = Projection(auto_regressive_shape, dropout)
         self.second_gate = Gate(auto_regressive_shape)
 
-    def forward(self, prev_seq: torch.Tensor, encoder_out: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, prev_seq: torch.Tensor, encoder_out: torch.Tensor
+    ) -> torch.Tensor:
         """The forward function of the decoder
 
         Parameters
@@ -73,8 +76,10 @@ class Decoder(nn.Module):
 
         return proj_gate
 
+
 def run_gated_decoder():
     print("Running run_gated_decoder()")
+
 
 if __name__ == "__main__":
     run_gated_decoder()

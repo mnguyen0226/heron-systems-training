@@ -7,6 +7,7 @@ from torch import nn
 from gamebreaker.classifier.network.gated_decoder import Decoder
 from gamebreaker.classifier.network.gated_encoder import Encoder
 
+
 class GatedTransformer(nn.Module):
     def __init__(
         self,
@@ -73,8 +74,10 @@ def binary(x: torch.Tensor, bits: int) -> torch.Tensor:
     mask = 2 ** torch.arange(bits).to(x.device, x.dtype)
     return x.unsqueeze(-1).bitwise_and(mask).ne(0).byte()
 
+
 def model():
     print("Running model.py")
+
 
 if __name__ == "__main__":
     model()

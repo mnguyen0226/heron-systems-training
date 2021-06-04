@@ -42,7 +42,7 @@ from utils.preprocess import *
 from utils.nn_model import *
 import time
 
-#NEED: model, optimizer, loss function, training loop
+# NEED: model, optimizer, loss function, training loop
 
 
 # define the encoder, decoder, and seq2seq model
@@ -55,8 +55,20 @@ N_LAYERS = 2
 ENC_DROPOUT = 0.5
 DEC_DROPOUT = 0.5
 
-enc = Encoder(input_dim=INPUT_DIM, emb_dim=ENC_EMB_DIM, hid_dim=HID_DIM, n_layers=N_LAYERS, dropout=ENC_DROPOUT)
-dec = Decoder(output_dim=OUTPUT_DIM, emb_dim=DEC_EMB_DIM, hid_dim=HID_DIM, n_layers=N_LAYERS, dropout=DEC_DROPOUT)
+enc = Encoder(
+    input_dim=INPUT_DIM,
+    emb_dim=ENC_EMB_DIM,
+    hid_dim=HID_DIM,
+    n_layers=N_LAYERS,
+    dropout=ENC_DROPOUT,
+)
+dec = Decoder(
+    output_dim=OUTPUT_DIM,
+    emb_dim=DEC_EMB_DIM,
+    hid_dim=HID_DIM,
+    n_layers=N_LAYERS,
+    dropout=DEC_DROPOUT,
+)
 model = Seq2Seq(encoder=enc, decoder=dec, device=device).to(device)
 
 # initialize the weight for the model: uniform distribution between -0.08 and +0.08
@@ -64,21 +76,30 @@ def init_weights(m):
     for name, param in m.named_parameters():
         nn.init.uniform_(param.data, -0.08, 0.08)
 
-model.apply(init_weights) # apply called, then init_weights function will be called every module and sub-module within outmodel
+
+model.apply(
+    init_weights
+)  # apply called, then init_weights function will be called every module and sub-module within outmodel
 
 # function calculate number of trainable param in the model
 def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad) # require gradient cal
+    return sum(
+        p.numel() for p in model.parameters() if p.requires_grad
+    )  # require gradient cal
 
-print(f'The model has {count_parameters(model):,} trainable parameters')
 
-optimizer = optim.Adam(model.parameters()) # optimizer
+print(f"The model has {count_parameters(model):,} trainable parameters")
+
+optimizer = optim.Adam(model.parameters())  # optimizer
 
 # loss function calculate both sofrmax as well as negative log-likelihood of the prediction
 
 TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-criterion = nn.CrossEntropyLoss(ignore_index = TRG_PAD_IDX) # passing index of <pad> token as ignore we ignord the loss whenever thetarget token is a padding token
+criterion = nn.CrossEntropyLoss(
+    ignore_index=TRG_PAD_IDX
+)  # passing index of <pad> token as ignore we ignord the loss whenever thetarget token is a padding token
+
 
 def train(model, iterator, optimizer, criterion, clip):
 
@@ -99,63 +120,67 @@ def train(model, iterator, optimizer, criterion, clip):
     """
     model.train()
     epoch_loss = 0
-    for i, batch in enumerate(iterator): # trg is labels, src is input
+    for i, batch in enumerate(iterator):  # trg is labels, src is input
         src = batch.src
         trg = batch.trg
 
-        optimizer.zero_grad() 
+        optimizer.zero_grad()
 
         output = model(src, trg)
 
-        #trg = [trg len, batch size]
-        #output = [trg len, batch size, output dim]
+        # trg = [trg len, batch size]
+        # output = [trg len, batch size, output dim]
 
-        output_dim = output.shape[-1] #?
+        output_dim = output.shape[-1]  # ?
 
-        output = output[1:].view(-1, output_dim) # prediction 
-        trg = trg[1:].view(-1) # labels
+        output = output[1:].view(-1, output_dim)  # prediction
+        trg = trg[1:].view(-1)  # labels
 
-        loss = criterion(output, trg) # calculates both the log softmax as well as the negative log-likelihood of our predictions. 
+        loss = criterion(
+            output, trg
+        )  # calculates both the log softmax as well as the negative log-likelihood of our predictions.
 
         loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip) # prevent explosion
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)  # prevent explosion
 
-        optimizer.step() # gradient descent / adam
+        optimizer.step()  # gradient descent / adam
 
-        epoch_loss += loss.item() # sum all the loss
-    return epoch_loss/len(iterator) # average the loss sum
+        epoch_loss += loss.item()  # sum all the loss
+    return epoch_loss / len(iterator)  # average the loss sum
+
 
 def evaluate(model, iterator, criterion):
     """
     Similar to trainng loop but no need to pass an optimizer and clip value
     Set the model with model.eval
     Use torch.no_grad() to ensure no gradients are calculated , reduce memory consumptio and speed up things
-    Iteration loop same but turn off teacher forcing  
+    Iteration loop same but turn off teacher forcing
     """
     model.eval()
-    epoch_loss= 0
+    epoch_loss = 0
     with torch.no_grad():
         for i, batch in enumerate(iterable=iterator):
             src = batch.src
             trg = batch.trg
-            output = model(src, trg, 0) # turn off teacher forcing
+            output = model(src, trg, 0)  # turn off teacher forcing
 
             #  trg = [trg len, batch size]
-            #output = [trg len, batch size, output dim]
+            # output = [trg len, batch size, output dim]
             output_dim = output.shape[-1]
-            
+
             output = output[1:].view(-1, output_dim)
             trg = trg[1:].view(-1)
 
-            #trg = [(trg len - 1) * batch size]
-            #output = [(trg len - 1) * batch size, output dim]
+            # trg = [(trg len - 1) * batch size]
+            # output = [(trg len - 1) * batch size, output dim]
 
             loss = criterion(output, trg)
-            
+
             epoch_loss += loss.item()
 
-    return epoch_loss/len(iterator) # average the loss sum
+    return epoch_loss / len(iterator)  # average the loss sum
+
 
 def epoch_time(start_time, end_time):
     """ Calculate epoch run time """
@@ -163,6 +188,7 @@ def epoch_time(start_time, end_time):
     elapsed_mins = int(elapsed_time / 60)
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
     return elapsed_mins, elapsed_secs
+
 
 # check if our model has achieved best validation loss so far, if it has, we will update out best validation loss and save the parm to our model (State_dict)
 # then test model with saved param
@@ -172,24 +198,34 @@ def main():
 
     N_EPOCHS = 10
     CLIP = 1
-    best_valid_loss = float('inf')
-    
+    best_valid_loss = float("inf")
+
     print("Running")
     for epoch in range(N_EPOCHS):
         start_time = time.time()
-        train_loss = train(model=model, iterator=train_iterator, optimizer=optimizer, criterion=criterion, clip=CLIP)
+        train_loss = train(
+            model=model,
+            iterator=train_iterator,
+            optimizer=optimizer,
+            criterion=criterion,
+            clip=CLIP,
+        )
         valid_loss = evaluate(model, valid_iterator, criterion=criterion)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time=start_time, end_time=end_time)
 
-        #save model for best validation set
+        # save model for best validation set
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'seq2seq-model.pt')
-        print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+            torch.save(model.state_dict(), "seq2seq-model.pt")
+        print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(
+            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
+        )
 
 
 if __name__ == "__main__":

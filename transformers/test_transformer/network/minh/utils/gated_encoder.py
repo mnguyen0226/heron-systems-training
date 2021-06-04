@@ -46,12 +46,16 @@ class GatedEncoder(SubModule2D):
 
         encoder_dict = []
         for i in range(nb_encoders):
-            encoder_dict.append((f"encoder_{i}", Encoder(in_shape, nb_heads, do_scale, dropout)))
+            encoder_dict.append(
+                (f"encoder_{i}", Encoder(in_shape, nb_heads, do_scale, dropout))
+            )
 
         self.encoders = nn.Sequential(OrderedDict(encoder_dict))
 
     @classmethod
-    def from_args(cls, args: DotDict, in_shape: Tuple[int, int], id: str) -> "GatedEncoder":
+    def from_args(
+        cls, args: DotDict, in_shape: Tuple[int, int], id: str
+    ) -> "GatedEncoder":
         """
 
         Parameters
@@ -116,10 +120,13 @@ class GatedEncoder(SubModule2D):
         return self._out_shape
 
 
-
 class Encoder(nn.Module):
     def __init__(
-        self, in_shape: Tuple[int, int], nb_heads: int, do_scale: bool, dropout: float = 0.0
+        self,
+        in_shape: Tuple[int, int],
+        nb_heads: int,
+        do_scale: bool,
+        dropout: float = 0.0,
     ):
         """
         A single encoding layer for the Gated transformer
@@ -203,7 +210,13 @@ class LNorm(nn.Module):
 
 
 class Attn(nn.Module):
-    def __init__(self, in_shape: Tuple[int, int], nb_heads: int, scale: bool, dropout: float = 0.0):
+    def __init__(
+        self,
+        in_shape: Tuple[int, int],
+        nb_heads: int,
+        scale: bool,
+        dropout: float = 0.0,
+    ):
         """Multi-head self attention layer of the transformer
 
         Parameters
@@ -376,9 +389,10 @@ class Projection(nn.Module):
         # Return the output in the same shape as the input
         return y.view(b, s, f).permute(0, 2, 1)
 
+
 def run_gated_encoder():
     print("Running run_gated_encoder()")
 
+
 if __name__ == "__main__":
     run_gated_encoder()
-    

@@ -79,7 +79,9 @@ TRG = Field(
 )
 
 # load Multi30k dataset, feature(SRC) and label(TRG), then split them into train, valid, test data
-train_data, valid_data, test_data = Multi30k.splits(exts=(".de", ".en"), fields=(SRC, TRG))
+train_data, valid_data, test_data = Multi30k.splits(
+    exts=(".de", ".en"), fields=(SRC, TRG)
+)
 
 # build vocab by converting any tokens that appear less than 2 times into <unk> tokens. Why?
 SRC.build_vocab(train_data, min_freq=2)

@@ -7,7 +7,11 @@ import torch.optim as optim
 
 from utils.data_loader import device
 from utils.nn import model, optimizer
-from utils.data_loader import train_iter, valid_iter, test_iter # Training, validating, testing
+from utils.data_loader import (
+    train_iter,
+    valid_iter,
+    test_iter,
+)  # Training, validating, testing
 from utils.data_preprocessing import en_vocab
 
 PAD_IDX = en_vocab.stoi["<pad>"]
@@ -15,16 +19,23 @@ criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
 learning_rate = 2e-2
 
-def train(model: nn.Module, iterator: torch.utils.data.DataLoader, optimizer: optim.Optimizer, criterion: nn.Module, clip: float):
+
+def train(
+    model: nn.Module,
+    iterator: torch.utils.data.DataLoader,
+    optimizer: optim.Optimizer,
+    criterion: nn.Module,
+    clip: float,
+):
     model.train()
     epoch_loss = 0
     for _, (src, trg) in enumerate(iterator):
         print(f"TESTING src main {src.shape}")
         print(f"TESTING trg main {trg.shape}")
-        src, trg = src.to(device), trg.to(device) # calculation and ground truth
+        src, trg = src.to(device), trg.to(device)  # calculation and ground truth
 
         optimizer.zero_grad()
-            
+
         output = model(src, trg)
 
         output = output[1:].view(-1, output.shape[-1])
@@ -41,7 +52,8 @@ def train(model: nn.Module, iterator: torch.utils.data.DataLoader, optimizer: op
 
         epoch_loss += loss.item()
 
-    return epoch_loss / len(iterator)    
+    return epoch_loss / len(iterator)
+
 
 def evaluate(
     model: nn.Module, iterator: torch.utils.data.DataLoader, criterion: nn.Module

@@ -49,12 +49,19 @@ class Decoder(nn.Module):
         """
         super().__init__()
         self.device = device
-        self.tok_embedding = nn.Embedding(num_embeddings=output_dim, embedding_dim=hid_dim)
-        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
+        self.tok_embedding = nn.Embedding(
+            num_embeddings=output_dim, embedding_dim=hid_dim
+        )
+        self.pos_embedding = nn.Embedding(
+            num_embeddings=max_length, embedding_dim=hid_dim
+        )
 
         # gated decoder layer
         self.layers = nn.ModuleList(
-            [GatedDecoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                GatedDecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
 
         # linear layer of the output
@@ -62,7 +69,9 @@ class Decoder(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-        self.scale = hid_dim ** 0.5  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        self.scale = (
+            hid_dim ** 0.5
+        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
@@ -96,10 +105,14 @@ class Decoder(nn.Module):
         trg_len = trg.shape[1]
 
         # pos = [batch size, trg len]
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
 
         # trg = [batch size, trg len, hid dim]
-        trg = self.dropout((self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos))
+        trg = self.dropout(
+            (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
+        )
 
         for layer in self.layers:
             # trg = [batch size, trg len, hid dim]
@@ -113,7 +126,9 @@ class Decoder(nn.Module):
 
 
 class GatedDecoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """Gated Decoder Layer for the Decoder
 
         Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer.
@@ -148,11 +163,15 @@ class GatedDecoderLayer(nn.Module):
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.encoder_attention = MultiHeadAttentionLayer(
+            hid_dim, n_heads, dropout, device
+        )
         self.second_gate = Gate(hid_dim=hid_dim)
 
         self.third_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+            hid_dim, pf_dim, dropout
+        )
         self.third_gate = Gate(hid_dim=hid_dim)
 
         self.dropout = nn.Dropout(dropout)
@@ -210,7 +229,9 @@ class GatedDecoderLayer(nn.Module):
         second_gate_output, _ = self.second_gate(self.dropout(_trg), trg)
 
         # third layer norm - already dropped out from the second gate
-        trg = self.third_layer_norm(second_gate_output)  # _trg = [batch size, trg len, hid dim]
+        trg = self.third_layer_norm(
+            second_gate_output
+        )  # _trg = [batch size, trg len, hid dim]
 
         # positionwise feedforward
         _trg = self.positionwise_feedforward(trg)

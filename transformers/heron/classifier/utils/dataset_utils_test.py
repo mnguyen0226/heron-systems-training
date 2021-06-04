@@ -72,24 +72,52 @@ class TestGetStats:
     def test_base_stats(self):
         for unit_type in _AVAILABLE_UNITS:
             unit = NamedNumpyArray(
-                np.asarray([[unit_type, PlayerRelative.SELF, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            unit_type,
+                            PlayerRelative.SELF,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, np.zeros(len(list(ContextObsIdx))))
 
             for stat in unit_stats:
-                assert unit_stats[stat] == BASE_STATS[unit_type][stat] / MAX_STATS[stat], (
+                assert (
+                    unit_stats[stat] == BASE_STATS[unit_type][stat] / MAX_STATS[stat]
+                ), (
                     f"{unit_type.name}'s {stat}: Expected "
                     + f"{BASE_STATS[unit_type][stat] / MAX_STATS[stat]} got {unit_stats[stat]}"
                 )
 
-                assert unit_stats[stat] <= 1, f"{unit_type.name} {stat}: {unit_stats[stat]} > 1"
+                assert (
+                    unit_stats[stat] <= 1
+                ), f"{unit_type.name} {stat}: {unit_stats[stat]} > 1"
 
     def test_creep_change(self):
         zerg_units = [unit_type for unit_type in BASE_STATS if unit_type in units.Zerg]
 
         for unit_type in zerg_units:
             unit = NamedNumpyArray(
-                np.asarray([[unit_type, PlayerRelative.SELF, 0, 0, 0, 1,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            unit_type,
+                            PlayerRelative.SELF,
+                            0,
+                            0,
+                            0,
+                            1,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, np.zeros(len(list(ContextObsIdx))))
 
@@ -98,24 +126,52 @@ class TestGetStats:
 
     def test_zealot_charges(self):
         unit = NamedNumpyArray(
-            np.asarray([[units.Protoss.Zealot, PlayerRelative.SELF, 0, 0, 0, 0,]]),
+            np.asarray(
+                [
+                    [
+                        units.Protoss.Zealot,
+                        PlayerRelative.SELF,
+                        0,
+                        0,
+                        0,
+                        0,
+                    ]
+                ]
+            ),
             (None, self.features),
         )[0]
         unit_stats = get_stats(unit, np.zeros(len(list(ContextObsIdx))))
 
-        assert unit_stats.speed == BASE_STATS[units.Protoss.Zealot].speed / MAX_STATS.speed
+        assert (
+            unit_stats.speed == BASE_STATS[units.Protoss.Zealot].speed / MAX_STATS.speed
+        )
 
     def test_adept_glaives(self):
         # Check that g_dps changes when it should
         for alliance, upgrade in zip(
             [PlayerRelative.SELF, PlayerRelative.ENEMY],
-            [ContextObsIdx.blue_resonating_glaives, ContextObsIdx.red_resonating_glaives],
+            [
+                ContextObsIdx.blue_resonating_glaives,
+                ContextObsIdx.red_resonating_glaives,
+            ],
         ):
             upgrades = np.zeros(len(list(ContextObsIdx)))
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Protoss.Adept, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Protoss.Adept,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
@@ -124,17 +180,35 @@ class TestGetStats:
         # Check that it doesn't change when it shouldn't
         for alliance, upgrade in zip(
             [PlayerRelative.ENEMY, PlayerRelative.SELF],
-            [ContextObsIdx.blue_resonating_glaives, ContextObsIdx.red_resonating_glaives],
+            [
+                ContextObsIdx.blue_resonating_glaives,
+                ContextObsIdx.red_resonating_glaives,
+            ],
         ):
             upgrades = np.zeros(len(list(ContextObsIdx)))
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Protoss.Adept, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Protoss.Adept,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
-            assert unit_stats.g_dps == BASE_STATS[units.Protoss.Adept].g_dps / MAX_STATS.g_dps
+            assert (
+                unit_stats.g_dps
+                == BASE_STATS[units.Protoss.Adept].g_dps / MAX_STATS.g_dps
+            )
 
     def test_marine_stims(self):
         # Check that g_dps changes when it should
@@ -145,7 +219,16 @@ class TestGetStats:
         ]:
             unit = NamedNumpyArray(
                 np.asarray(
-                    [[units.Terran.Marine, PlayerRelative.SELF, buff_id_0, buff_id_1, 0, 0,]]
+                    [
+                        [
+                            units.Terran.Marine,
+                            PlayerRelative.SELF,
+                            buff_id_0,
+                            buff_id_1,
+                            0,
+                            0,
+                        ]
+                    ]
                 ),
                 (None, self.features),
             )[0]
@@ -154,7 +237,8 @@ class TestGetStats:
             assert unit_stats.g_dps == 14.7 / MAX_STATS.g_dps
             assert unit_stats.a_dps == 14.7 / MAX_STATS.a_dps
             assert (
-                unit_stats.speed == (BASE_STATS[units.Terran.Marine].speed + 1.57) / MAX_STATS.speed
+                unit_stats.speed
+                == (BASE_STATS[units.Terran.Marine].speed + 1.57) / MAX_STATS.speed
             )
 
     def test_marauder_stims(self):
@@ -166,7 +250,16 @@ class TestGetStats:
         ]:
             unit = NamedNumpyArray(
                 np.asarray(
-                    [[units.Terran.Marauder, PlayerRelative.SELF, buff_id_0, buff_id_1, 0, 0,]]
+                    [
+                        [
+                            units.Terran.Marauder,
+                            PlayerRelative.SELF,
+                            buff_id_0,
+                            buff_id_1,
+                            0,
+                            0,
+                        ]
+                    ]
                 ),
                 (None, self.features),
             )[0]
@@ -183,13 +276,28 @@ class TestGetStats:
         # Check that g_dps changes when it should
         for alliance, upgrade in zip(
             [PlayerRelative.SELF, PlayerRelative.ENEMY],
-            [ContextObsIdx.blue_infernal_preigniter, ContextObsIdx.red_infernal_preigniter],
+            [
+                ContextObsIdx.blue_infernal_preigniter,
+                ContextObsIdx.red_infernal_preigniter,
+            ],
         ):
             upgrades = np.zeros(len(list(ContextObsIdx)))
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Terran.Hellbat, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Terran.Hellbat,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
@@ -198,19 +306,35 @@ class TestGetStats:
                 == (BASE_STATS[units.Terran.Hellbat].g_damage + 12) / MAX_STATS.g_damage
             )
             assert (
-                unit_stats.g_dps == (BASE_STATS[units.Terran.Hellbat].g_dps + 8.4) / MAX_STATS.g_dps
+                unit_stats.g_dps
+                == (BASE_STATS[units.Terran.Hellbat].g_dps + 8.4) / MAX_STATS.g_dps
             )
 
         # Check that it doesn't change when it shouldn't
         for alliance, upgrade in zip(
             [PlayerRelative.ENEMY, PlayerRelative.SELF],
-            [ContextObsIdx.blue_infernal_preigniter, ContextObsIdx.red_infernal_preigniter],
+            [
+                ContextObsIdx.blue_infernal_preigniter,
+                ContextObsIdx.red_infernal_preigniter,
+            ],
         ):
             upgrades = np.zeros(len(list(ContextObsIdx)))
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Terran.Hellbat, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Terran.Hellbat,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
@@ -218,7 +342,10 @@ class TestGetStats:
                 unit_stats.g_damage
                 == (BASE_STATS[units.Terran.Hellbat].g_damage) / MAX_STATS.g_damage
             )
-            assert unit_stats.g_dps == (BASE_STATS[units.Terran.Hellbat].g_dps) / MAX_STATS.g_dps
+            assert (
+                unit_stats.g_dps
+                == (BASE_STATS[units.Terran.Hellbat].g_dps) / MAX_STATS.g_dps
+            )
 
     def test_zergling_glands(self):
         # Check that g_dps changes when it should
@@ -230,7 +357,19 @@ class TestGetStats:
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Zerg.Zergling, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Zerg.Zergling,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
@@ -245,11 +384,26 @@ class TestGetStats:
             upgrades[upgrade] += 1
 
             unit = NamedNumpyArray(
-                np.asarray([[units.Zerg.Zergling, alliance, 0, 0, 0, 0,]]), (None, self.features),
+                np.asarray(
+                    [
+                        [
+                            units.Zerg.Zergling,
+                            alliance,
+                            0,
+                            0,
+                            0,
+                            0,
+                        ]
+                    ]
+                ),
+                (None, self.features),
             )[0]
             unit_stats = get_stats(unit, upgrades)
 
-            assert unit_stats.g_dps == (BASE_STATS[units.Zerg.Zergling].g_dps) / MAX_STATS.g_dps
+            assert (
+                unit_stats.g_dps
+                == (BASE_STATS[units.Zerg.Zergling].g_dps) / MAX_STATS.g_dps
+            )
 
 
 def test_read_files():

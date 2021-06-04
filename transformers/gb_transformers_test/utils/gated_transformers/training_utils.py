@@ -8,7 +8,13 @@ import math
 import time
 
 from utils.gated_transformers.seq2seq import Seq2Seq
-from utils.gated_transformers.preprocess import SRC, TRG, device, train_iterator, valid_iterator
+from utils.gated_transformers.preprocess import (
+    SRC,
+    TRG,
+    device,
+    train_iterator,
+    valid_iterator,
+)
 from utils.gated_transformers.encoder import Encoder
 from utils.gated_transformers.decoder import Decoder
 
@@ -265,7 +271,11 @@ def gated_transformers_main() -> Tuple[float, float, float, float]:
             torch.save(model.state_dict(), "gated-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}")
-        print(f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(
+            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
+        )
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)

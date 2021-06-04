@@ -17,7 +17,9 @@ def test_gated_transformers_model() -> Tuple[float, float]:
     math.exp(test_loss):
         Testing PPL
     """
-    model.load_state_dict(torch.load("gated-tut6-model.pt", map_location=torch.device("cpu")))
+    model.load_state_dict(
+        torch.load("gated-tut6-model.pt", map_location=torch.device("cpu"))
+    )
 
     test_loss = evaluate(model, test_iterator, criterion)
 
