@@ -2,26 +2,15 @@
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
-import torchtext
-from torchtext.legacy.datasets import Multi30k
-from torchtext.legacy.data import Field, BucketIterator
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
-import spacy
-import numpy as np
-
-import random
+from typing import Tuple
 import math
 import time
 
-from utils.gated_transformers.seq2seq import *
-from utils.gated_transformers.preprocess import *
-from utils.gated_transformers.encoder import *
-from utils.gated_transformers.decoder import *
+from utils.gated_transformers.seq2seq import Seq2Seq
+from utils.gated_transformers.preprocess import SRC, TRG, device, train_iterator, valid_iterator
+from utils.gated_transformers.encoder import Encoder
+from utils.gated_transformers.decoder import Decoder
 
 
 # Define encoder and decoder
@@ -64,12 +53,12 @@ TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 model = Seq2Seq(enc, dec, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device)
 
 
-def count_parameters(model):
+def count_parameters(model: Tuple[tuple, tuple, tuple, tuple, str]) -> int:
     """Check number of training parameters
 
     Parameters
     ----------
-    model:
+    model: [tuple, tuple, tuple, tuple, str]
         input seq2seq model
 
     Return
@@ -82,12 +71,12 @@ def count_parameters(model):
 print(f"The model has {count_parameters(model):,} trainable parameters")
 
 
-def initialize_weights(m):
+def initialize_weights(m: Tuple[tuple, tuple, tuple, tuple, str]):
     """Xavier uniform initialization
 
     Parameters
     ----------
-    m:
+    m: [tuple, tuple, tuple, tuple, str]
         input model
     """
     if hasattr(m, "weight") and m.weight.dim() > 1:
@@ -105,28 +94,33 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
 
 
-def train(model, iterator, optimizer, criterion, clip):
+def train(
+    model: Tuple[tuple, tuple, tuple, tuple, str],
+    iterator: int,
+    optimizer: int,
+    criterion: int,
+    clip: int,
+) -> float:
     """Train by calculating losses and update parameters
 
     Parameters
     ----------
-    model:
+    model: [tuple, tuple, tuple, tuple, str]
         input seq2seq model
-    iterator:
+    iterator: int
         SRC, TRG iterator
-    optimizer:
+    optimizer: int
         Adam optimizer
-    criterion:
+    criterion: int
         Cross Entropy Loss function
-    clip:
-        clip training process
+    clip: int
+        Clip training process
 
     Return
     ----------
-    epoch_loss / len(iterator)
+    epoch_loss / len(iterator): float
         Loss percentage during training
     """
-
     model.train()
 
     epoch_loss = 0
@@ -164,19 +158,19 @@ def train(model, iterator, optimizer, criterion, clip):
     return epoch_loss / len(iterator)
 
 
-def evaluate(model, iterator, criterion):
+def evaluate(model, iterator: int, criterion: int) -> float:
     """Evaluate same as training but no gradient calculation and parameter updates
 
     Parameters
     ----------
-    iterator:
+    iterator: int
         SRC, TRG iterator
-    criterion:
+    criterion: int
         Cross Entropy Loss function
 
     Return
     ----------
-    epoch_loss / len(iterator):
+    epoch_loss / len(iterator): float
         Loss percentage during validating
     """
 
@@ -210,7 +204,7 @@ def evaluate(model, iterator, criterion):
     return epoch_loss / len(iterator)
 
 
-def epoch_time(start_time, end_time):
+def epoch_time(start_time: float, end_time: float) -> Tuple[int, int]:
     """Tells how long an epoch takes
 
     Parameters
@@ -222,7 +216,10 @@ def epoch_time(start_time, end_time):
 
     Return
     ----------
-    Epoch run time
+    elapsed_mins: float
+        elapse minutes
+    elapsed_secs: float
+        elapse seconds
     """
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
@@ -236,8 +233,20 @@ train_loss = 0
 valid_loss = 0
 
 
-def gated_transformers_main():
-    """Run Training and Evaluating procedure"""
+def gated_transformers_main() -> Tuple[float, float, float, float]:
+    """Run Training and Evaluating procedure
+
+    Return
+    ----------
+    train_loss: float
+        training loss of the current epoch
+    valid_loss: float
+        validating loss of the current epoch
+    math.exp(train_loss): float
+        training PPL
+    math.exp(valid_loss): float
+        validating PPL
+    """
     best_valid_loss = float("inf")
 
     for epoch in range(N_EPOCHS):
@@ -256,11 +265,7 @@ def gated_transformers_main():
             torch.save(model.state_dict(), "gated-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(
-            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
-        )
-        print(
-            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
-        )
+        print(f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}")
+        print(f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}")
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)

@@ -1,32 +1,20 @@
+# script running the Encoder of the Gated Transformers
+
+from typing import Tuple
 import torch
 import torch.nn as nn
-import torch.optim as optim
-
-import torchtext
-from torchtext.legacy.datasets import Multi30k
-from torchtext.legacy.data import Field, BucketIterator
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
-import spacy
-import numpy as np
-
-import random
-import math
-import time
 
 
 class Encoder(nn.Module):
     def __init__(
         self,
-        input_dim,
-        hid_dim,
-        n_layers,
-        n_heads,
-        pf_dim,
-        dropout,
-        device,
+        input_dim: int,
+        hid_dim: int,
+        n_layers: int,
+        n_heads: int,
+        pf_dim: int,
+        dropout: float,
+        device: str,
         max_length=100,
     ):
         """Encoder class for Gated Transformer which is used for
@@ -44,34 +32,28 @@ class Encoder(nn.Module):
             number of layer(s) of the EncoderLayer
         pf_dim: int
             dimension of the output from the Feedforward layer
-        dropout: int
+        dropout: float
             dropout rate = 0.1
-        device: String
+        device: str
             cpu or gpu
         max_length: int
-            the Input Embedding's position embedding has a vocab size of 100 which means our model can accept sentences up to 100 tokens long
+            the Input Embedding's position embedding has a vocab size of 100 which means our model can
+                accept sentences up to 100 tokens long
         """
         super().__init__()
         self.device = device
-        self.tok_embedding = nn.Embedding(
-            num_embeddings=input_dim, embedding_dim=hid_dim
-        )
-        self.pos_embedding = nn.Embedding(
-            num_embeddings=max_length, embedding_dim=hid_dim
-        )
+        self.tok_embedding = nn.Embedding(num_embeddings=input_dim, embedding_dim=hid_dim)
+        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
 
         self.layers = nn.ModuleList(
-            [
-                GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
-                for _ in range(n_layers)
-            ]
+            [GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
         )
         self.dropout = nn.Dropout(dropout)
-        self.scale = (
-            hid_dim ** 0.5
-        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        self.scale = hid_dim ** 0.5  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
-    def forward(self, src, src_mask):
+    def forward(
+        self, src: Tuple[int, int], src_mask: Tuple[int, int, int, int]
+    ) -> Tuple[int, int, int]:
         """Forwards function for the Encoder
 
         Parameters
@@ -79,7 +61,8 @@ class Encoder(nn.Module):
         src: [batch_size, src_len]
             tokenized vector input text
         src_mask: [batch_size, 1, 1, src_len]
-            masked the input text but allow to ignore <pad> after tokenized during training in the tokenized vector since it does not provide any value
+            masked the input text but allow to ignore <pad> after tokenized during training in the
+                tokenized vector since it does not provide any value
 
         Return
         ----------
@@ -90,14 +73,11 @@ class Encoder(nn.Module):
         src_len = src.shape[1]
 
         # positional vector. pos = [batch_size, src_len]
-        pos = (
-            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-        )
+        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
 
-        # src = [batch_size, src_len, hid_dim]. Here we dropout the input source so we have to dropout before doing Gating Layer
-        src = self.dropout(
-            (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
-        )
+        # src = [batch_size, src_len, hid_dim]. Here we dropout the input source so we have to dropout
+        # before doing Gating Layer
+        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
 
         for layer in self.layers:
             # src = [batch_size, src_len, hid_dim]
@@ -107,7 +87,7 @@ class Encoder(nn.Module):
 
 
 class LNorm(nn.Module):
-    def __init__(self, normalized_shape):
+    def __init__(self, normalized_shape: int):
         """Layer Normalization for both Encoder & Decoder
 
         Parameters
@@ -118,7 +98,7 @@ class LNorm(nn.Module):
         super().__init__()
         self.layer_norm = nn.LayerNorm(normalized_shape=normalized_shape)
 
-    def forward(self, x):
+    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:
         """Feed-forward function of the Layer Normalization function
 
         Parameters
@@ -131,7 +111,7 @@ class LNorm(nn.Module):
 
 
 class Gate(nn.Module):
-    def __init__(self, hid_dim):
+    def __init__(self, hid_dim: int):
         """Gate Layer for both the Encoder & Decoder
 
         Parameters
@@ -142,7 +122,9 @@ class Gate(nn.Module):
         super().__init__()
         self.gru = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
 
-    def forward(self, output, original_input):
+    def forward(
+        self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
+    ) -> Tuple[int, int, int]:
         """Feed-forward function of the Gate Layer
 
         Parameters
@@ -171,7 +153,7 @@ class Gate(nn.Module):
 
 
 class GatedEncoderLayer(nn.Module):
-    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
         """Gated Encoder layer of Encoder of the Transformer
 
         Parameters
@@ -182,9 +164,9 @@ class GatedEncoderLayer(nn.Module):
             number of head(s) for attention mechanism
         pf_dim: int
             input feed-forward dimension
-        dropout: Float
+        dropout: float
             dropout rate = 0.1
-        device: String
+        device: str
             cpu or gpu
         """
         super().__init__()
@@ -193,14 +175,14 @@ class GatedEncoderLayer(nn.Module):
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
-            hid_dim, pf_dim, dropout
-        )
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.second_gate = Gate(hid_dim=hid_dim)
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, src, src_mask):
+    def forward(
+        self, src: Tuple[int, int, int], src_mask: Tuple[int, int, int]
+    ) -> Tuple[int, int, int]:
         """Feed-forward layer for the Gate Encoder layer
 
         Parameters
@@ -208,7 +190,8 @@ class GatedEncoderLayer(nn.Module):
         src: [batch size, src len, hid dim]
             tokenized vector input text
         src_mask: [batch_size, 1, 1, src_len]
-            masked the input text but allow to ignore <pad> after tokenized during training in the tokenized vector since it does not provide any value
+            masked the input text but allow to ignore <pad> after tokenized during training in the
+                tokenized vector since it does not provide any value
 
         Return
         ----------
@@ -240,7 +223,7 @@ class GatedEncoderLayer(nn.Module):
 
 
 class MultiHeadAttentionLayer(nn.Module):
-    def __init__(self, hid_dim, n_heads, dropout, device):
+    def __init__(self, hid_dim: int, n_heads: int, dropout: float, device: str):
         """Multi/single Head Attention Layer. This layer define Q,K,V of the GateEncoderLayer
 
         Parameters
@@ -249,16 +232,14 @@ class MultiHeadAttentionLayer(nn.Module):
             input hidden dimension from the first layer norm
         n_heads: int
             number of heads for attention mechanism
-        dropout: int
+        dropout: float
             dropout rate = 0.1
-        device: String
+        device: str
             cpu or gpu
         """
         super().__init__()
 
-        assert (
-            hid_dim % n_heads == 0
-        )  # make sure that number of multiheads are concatenatable
+        assert hid_dim % n_heads == 0  # make sure that number of multiheads are concatenatable
 
         self.hid_dim = hid_dim
         self.n_heads = n_heads
@@ -279,11 +260,15 @@ class MultiHeadAttentionLayer(nn.Module):
         )  # apply linear transformation
 
         self.dropout = nn.Dropout(dropout)
-        self.scale = (
-            hid_dim ** 0.5
-        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        self.scale = hid_dim ** 0.5  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
-    def forward(self, query, key, value, mask=None):
+    def forward(
+        self,
+        query: Tuple[int, int, int],
+        key: Tuple[int, int, int],
+        value: Tuple[int, int, int],
+        mask=None,
+    ) -> Tuple[tuple, tuple]:
         """Feed-forward layer for the attention mechanism
 
         Parameters
@@ -294,7 +279,8 @@ class MultiHeadAttentionLayer(nn.Module):
             key: [batch size, key len, hid dim]
             value: [batch size, value len, hid dim]
         mask:
-            masked the input text but allow to ignore <pad> after tokenized during training in the tokenized vector since it does not provide any value
+            masked the input text but allow to ignore <pad> after tokenized during training in the
+                tokenized vector since it does not provide any value
 
         Return
         ----------
@@ -351,11 +337,12 @@ class MultiHeadAttentionLayer(nn.Module):
 
 
 class PositionwiseFeedforwardLayer(nn.Module):
-    def __init__(self, hid_dim, pf_dim, dropout):
+    def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
         """Positionwise Feedforward layer of GatedEncoderLayer
         Why is this used? Unfortunately, it is never explained in the paper.
         The transformed from hid_dim to pf_dim (pf_dim >> hid_dim.
-        The ReLU activation function and dropout are applied before it is transformed back into hid_dim representation
+        The ReLU activation function and dropout are applied before it is transformed back into
+            hid_dim representation
 
         Parameters
         ----------
@@ -367,15 +354,13 @@ class PositionwiseFeedforwardLayer(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.fc_1 = nn.Linear(
-            in_features=hid_dim, out_features=pf_dim
-        )  # linear transformation
+        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim)  # linear transformation
         self.fc_2 = nn.Linear(
             in_features=pf_dim, out_features=hid_dim
         )  # linear transformation # make sure to conert back from pf_dim to hid_dim
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x):
+    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:
         """Feedforward function for the PFF layer
 
         Parameters
@@ -389,9 +374,7 @@ class PositionwiseFeedforwardLayer(nn.Module):
             output to the second gate layer
         """
         # x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-        x = self.dropout(
-            torch.relu(self.fc_1(x))
-        )  # relu then dropout to contain same infor
+        x = self.dropout(torch.relu(self.fc_1(x)))  # relu then dropout to contain same infor
 
         # x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
         x = self.fc_2(x)

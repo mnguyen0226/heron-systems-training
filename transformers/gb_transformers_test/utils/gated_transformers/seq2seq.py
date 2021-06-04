@@ -1,28 +1,19 @@
+# script run the Seq2Seq of the Gated Transformers
+
+from typing import Tuple
 import torch
 import torch.nn as nn
-import torch.optim as optim
-
-import torchtext
-from torchtext.legacy.datasets import Multi30k
-from torchtext.legacy.data import Field, BucketIterator
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
-import spacy
-import numpy as np
-
-import random
-import math
-import time
-
-from utils.gated_transformers.preprocess import *
-from utils.gated_transformers.encoder import Encoder
-from utils.gated_transformers.decoder import Decoder
 
 
 class Seq2Seq(nn.Module):
-    def __init__(self, encoder, decoder, src_pad_idx, trg_pad_idx, device):
+    def __init__(
+        self,
+        encoder: Tuple[int, int, int, int, int, float, str],
+        decoder: Tuple[int, int, int, int, int, float, str],
+        src_pad_idx: Tuple[list, str, str, bool, bool],
+        trg_pad_idx: Tuple[list, str, str, bool, bool],
+        device: str,
+    ):
         """Seq2Seq encapsulates the encoder and decoder and handle the creation of masks (for src and trg)
 
         Parameters
@@ -45,7 +36,7 @@ class Seq2Seq(nn.Module):
         self.trg_pad_idx = trg_pad_idx
         self.device = device
 
-    def make_src_mask(self, src):
+    def make_src_mask(self, src: Tuple[int, int, int]) -> Tuple[int, int, int, int]:
         """Making input source mask by checking where the source sequence is not equal to a <pad> token
             It is 1 where the token is not a <pad> token and 0 when it is
 
@@ -66,9 +57,10 @@ class Seq2Seq(nn.Module):
 
         return src_mask
 
-    def make_trg_mask(self, trg):
+    def make_trg_mask(self, trg: Tuple[int, int]) -> Tuple[int, int, int, int]:
         """Making a target mask similar to srouce mask. Then we create a subsequence mask trg_sub_mask.
-            This creates a diagonal matrix where the elements above the diagonal will be 0 and the elements below the diagonal will be set to
+            This creates a diagonal matrix where the elements above the diagonal will be 0 and the elements
+                below the diagonal will be set to
             whatever the input tensor is.
 
         Parameters
@@ -88,9 +80,7 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(
-            torch.ones((trg_len, trg_len), device=self.device)
-        ).bool()
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
         # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
@@ -98,7 +88,7 @@ class Seq2Seq(nn.Module):
 
         return trg_mask
 
-    def forward(self, src, trg):
+    def forward(self, src: Tuple[int, int], trg: Tuple[int, int]) -> Tuple[tuple, tuple]:
         """Feed-forward function of the Seq2Seq
 
         Parameters

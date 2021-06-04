@@ -1,20 +1,11 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+# script preprocessing the translation German-English Dataset
 
-import torchtext
+import torch
 from torchtext.legacy.datasets import Multi30k
 from torchtext.legacy.data import Field, BucketIterator
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
 import spacy
 import numpy as np
-
 import random
-import math
-import time
 
 ########################
 SEED = 1234  # keep randomize to be constant
@@ -30,28 +21,36 @@ spacy_de = spacy.load("de_core_news_sm")  # generate German tokenizer
 spacy_en = spacy.load("en_core_web_sm")  # generate English tokenizer
 
 ########################
-def tokenize_de(text):
+def tokenize_de(text: str) -> list:
     """
     Tokenizes German text from a string into a list of strings
 
     Parameters
     ----------
-    text: String
+    text: str
         input text sentence(s)
+
+    Return
+    ----------
+    list of tokens: list
     """
     return [
         tok.text for tok in spacy_de.tokenizer(text)
     ]  # this is just parsing, not vectorized yet
 
 
-def tokenize_en(text):
+def tokenize_en(text: str) -> list:
     """
     Tokenizes English text from a string into a list of strings
 
     Parameters
     ----------
-    text: String
+    text: str
         input text sentence(s)
+
+    Return
+    ----------
+    list of tokens: list
     """
     return [
         tok.text for tok in spacy_en.tokenizer(text)
@@ -59,8 +58,9 @@ def tokenize_en(text):
 
 
 ########################
-# By default RNN Models in PyTorch require the sentence to be a tensor of shape [sequence length, batch size] to TorchText by default
-# will return the batches of tensors in the same shape. However, the Transformer will expect the batch dim to be first.
+# By default RNN Models in PyTorch require the sentence to be a tensor of shape [sequence length, batch size]
+# to TorchText by default will return the batches of tensors in the same shape. However, the Transformer will
+# expect the batch dim to be first.
 # We tell TorchText to have batches to be [batch size, sequence length] by setting batch_first
 SRC = Field(
     tokenize=tokenize_de,
@@ -79,9 +79,7 @@ TRG = Field(
 )
 
 # load Multi30k dataset, feature(SRC) and label(TRG), then split them into train, valid, test data
-train_data, valid_data, test_data = Multi30k.splits(
-    exts=(".de", ".en"), fields=(SRC, TRG)
-)
+train_data, valid_data, test_data = Multi30k.splits(exts=(".de", ".en"), fields=(SRC, TRG))
 
 # build vocab by converting any tokens that appear less than 2 times into <unk> tokens. Why?
 SRC.build_vocab(train_data, min_freq=2)

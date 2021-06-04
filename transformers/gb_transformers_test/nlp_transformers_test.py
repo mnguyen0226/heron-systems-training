@@ -1,11 +1,19 @@
-# pytest script that make sure the final train/validate loss and train/validate PPL of the gated transformers is better than the original transformers from "Attention Is All You Need"
+# pytest script that make sure the final train/validate loss and train/validate PPL of the gated transformers is
+# better than the original transformers from "Attention Is All You Need"
 # We want the Train Loss, Val Loss, Train PPL, and Val PPL to be lower than the test bench
 # RUNNING COMMAND: pytest -s pytest_transformers.py
 
+from utils.gated_transformers.training_utils import (
+    GATED_ENC_HEADS,
+    GATED_DEC_HEADS,
+    GATED_ENC_LAYERS,
+    GATED_DEC_LAYERS,
+)
+from utils.original_transformers.training_utils import ENC_HEADS, DEC_HEADS, ENC_LAYERS, DEC_LAYERS
 from utils.gated_transformers.testing_utils import test_gated_transformers_model
 from utils.original_transformers.testing_utils import test_origin_transformers_model
-from utils.gated_transformers.training_utils import *
-from utils.original_transformers.training_utils import *
+from utils.original_transformers.training_utils import origin_transformers_main
+from utils.gated_transformers.training_utils import gated_transformers_main
 
 import pytest
 from decimal import Decimal
@@ -23,7 +31,8 @@ gated_transformers_dec_layers = GATED_DEC_LAYERS
 
 # results from Transformers "Attention Is All You Need"
 print(
-    f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)"
+    f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads} \
+    decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)"
 )
 
 print("---------------------------------------------")
@@ -49,7 +58,8 @@ print(
     "\n------------------------------------------------------------------------------------------"
 )
 print(
-    f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
+    f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} \
+        decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
 )
 
 print("-----------------------------------------")
@@ -89,9 +99,7 @@ class TestGatedTransformersTrainingSet:
     def test_training_PPL(self):
         """Validates the training PPL of gated transformers < original transformers'"""
         global gated_transformers_training_PPL, origin_transformers_training_PPL
-        assert Decimal(gated_transformers_training_PPL) < Decimal(
-            origin_transformers_training_PPL
-        )
+        assert Decimal(gated_transformers_training_PPL) < Decimal(origin_transformers_training_PPL)
 
     def test_validating_PPL(self):
         """Validates the validating PPL of gated transfomers < original transformers'"""
@@ -105,13 +113,9 @@ class TestGatedTransformersTestingSet:
     def test_testing_loss(self):
         """Validates the testing loss of the gated transformers < origin transformers'"""
         global gated_transformers_testing_loss, origin_transformers_testing_loss
-        assert Decimal(gated_transformers_testing_loss) < Decimal(
-            origin_transformers_testing_loss
-        )
+        assert Decimal(gated_transformers_testing_loss) < Decimal(origin_transformers_testing_loss)
 
     def test_testing_PPL(self):
         """Validates the testing PPL of the gated transformers < origin transformers'"""
         global gated_transformers_testing_PPL, origin_transformers_testing_PPL
-        assert Decimal(gated_transformers_testing_PPL) < Decimal(
-            origin_transformers_testing_PPL
-        )
+        assert Decimal(gated_transformers_testing_PPL) < Decimal(origin_transformers_testing_PPL)
