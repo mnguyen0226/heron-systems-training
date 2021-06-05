@@ -11,8 +11,8 @@ OUTPUT_DIM = len(TRG.vocab)
 HID_DIM = 256
 ENC_LAYERS = 3
 DEC_LAYERS = 3
-ENC_HEADS = 8
-DEC_HEADS = 8
+ENC_HEADS = 8 # Customize multi head
+DEC_HEADS = 8 # Customize multi head
 ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
@@ -26,6 +26,8 @@ enc = Encoder(INPUT_DIM,
               device,              
               ENC_LAYERS)
 
+print(f"TESTING: Finish initialize the Encoder")
+
 dec = Decoder(OUTPUT_DIM, 
               HID_DIM, 
               DEC_HEADS, 
@@ -33,7 +35,6 @@ dec = Decoder(OUTPUT_DIM,
               DEC_DROPOUT, 
               device,
               DEC_LAYERS)
-
 
 
 SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
