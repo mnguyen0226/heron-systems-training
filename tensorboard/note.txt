@@ -1,0 +1,9 @@
+1. Read in data and with appropriate transforms
+2. Set up TensorBoard
+3 Write to TensorBoard
+4. Inspect a model architecture using TensorBoard
+5. Use TensorBoard to create interactive versions of the visualizations
+    - inspect the training data
+    - how to track model's performance as it trains
+    - how to assess our model's performance once it is trained
+    

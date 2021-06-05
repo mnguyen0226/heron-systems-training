@@ -1,0 +1,2 @@
+Pytest allows to easily parametrize test functions. 
+

@@ -154,7 +154,7 @@ class Seq2Seq(nn.Module):
 
         batch_size = src.shape[1]
         max_len = trg.shape[0]
-        
+
         print(src.shape)
         trg_vocab_size = self.decoder.output_dim
 
