@@ -43,7 +43,9 @@ class Decoder(nn.Module):
         self.projection = Projection(auto_regressive_shape, dropout)
         self.second_gate = Gate(auto_regressive_shape)
 
-    def forward(self, prev_seq: torch.Tensor, encoder_out: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, prev_seq: torch.Tensor, encoder_out: torch.Tensor
+    ) -> torch.Tensor:
         """The forward function of the decoder
 
         Parameters

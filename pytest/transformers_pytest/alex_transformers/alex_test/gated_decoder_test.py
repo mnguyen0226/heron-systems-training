@@ -83,13 +83,18 @@ def test_autoreg():
     batch_size = 32
     nb_epochs = 100
 
-    transformer = AutoRegTransformer((nb_bits, sequence_len), 1, sequence_len, False, 0.0).to(0)
+    transformer = AutoRegTransformer(
+        (nb_bits, sequence_len), 1, sequence_len, False, 0.0
+    ).to(0)
     optim = torch.optim.Adam(transformer.parameters(), 0.001)
     loss_fcn = nn.CrossEntropyLoss()
     possible_labels = list(range(1, 2 ** nb_bits))
 
     permutations = torch.tensor(
-        [np.random.choice(possible_labels, sequence_len, replace=False) for _ in range(nb_samples)]
+        [
+            np.random.choice(possible_labels, sequence_len, replace=False)
+            for _ in range(nb_samples)
+        ]
     )
     _, labels = torch.sort(permutations)
     inputs = binary(permutations, nb_bits).float()
@@ -97,17 +102,17 @@ def test_autoreg():
     training_inputs = inputs[0:train_samples]
     training_labels = labels[0:train_samples]
 
-    x_train = torch.reshape(training_inputs, (-1, batch_size, sequence_len, nb_bits)).permute(
-        0, 1, 3, 2
-    )
+    x_train = torch.reshape(
+        training_inputs, (-1, batch_size, sequence_len, nb_bits)
+    ).permute(0, 1, 3, 2)
     y_train = torch.reshape(training_labels, (-1, batch_size, sequence_len))
 
     validation_inputs = inputs[train_samples:]
     validation_labels = labels[train_samples:]
 
-    x_val = torch.reshape(validation_inputs, (-1, batch_size, sequence_len, nb_bits)).permute(
-        0, 1, 3, 2
-    )
+    x_val = torch.reshape(
+        validation_inputs, (-1, batch_size, sequence_len, nb_bits)
+    ).permute(0, 1, 3, 2)
     y_val = torch.reshape(validation_labels, (-1, batch_size, sequence_len))
 
     max_val_acc = 0
@@ -115,7 +120,9 @@ def test_autoreg():
         for x_batch, y_batch in zip(x_train, y_train):
             optim.zero_grad()
             y_pred = transformer(x_batch.to(0))
-            loss = loss_fcn(y_pred.view(-1, sequence_len), y_batch.view(-1).to(0).long())
+            loss = loss_fcn(
+                y_pred.view(-1, sequence_len), y_batch.view(-1).to(0).long()
+            )
             loss.backward()
             optim.step()
 
@@ -144,13 +151,18 @@ def test_gated_transformer():
     batch_size = 16
     nb_epochs = 100
 
-    transformer = GatedTransformer((nb_bits, sequence_len), 1, sequence_len, False, 0.0).to(0)
+    transformer = GatedTransformer(
+        (nb_bits, sequence_len), 1, sequence_len, False, 0.0
+    ).to(0)
     optim = torch.optim.Adam(transformer.parameters(), 0.01)
     loss_fcn = nn.CrossEntropyLoss()
     possible_labels = list(range(1, 2 ** nb_bits))
 
     permutations = torch.tensor(
-        [np.random.choice(possible_labels, sequence_len, replace=False) for _ in range(nb_samples)]
+        [
+            np.random.choice(possible_labels, sequence_len, replace=False)
+            for _ in range(nb_samples)
+        ]
     )
     _, labels = torch.sort(permutations)
     inputs = binary(permutations, nb_bits).float()
@@ -158,8 +170,12 @@ def test_gated_transformer():
     training_inputs = inputs[0:train_samples]
     training_labels = labels[0:train_samples]
 
-    x_train = torch.zeros((sequence_len * training_inputs.shape[0], sequence_len, nb_bits))
-    z_train = torch.zeros((sequence_len * training_inputs.shape[0], sequence_len, nb_bits))
+    x_train = torch.zeros(
+        (sequence_len * training_inputs.shape[0], sequence_len, nb_bits)
+    )
+    z_train = torch.zeros(
+        (sequence_len * training_inputs.shape[0], sequence_len, nb_bits)
+    )
     y_train = torch.zeros((sequence_len * training_labels.shape[0], 1))
     # Loop over every single sequence
     for s_idx, (x_s, y_s) in enumerate(zip(training_inputs, training_labels)):
@@ -171,25 +187,39 @@ def test_gated_transformer():
             ]
             y_train[s_idx * sequence_len + i_idx, 0] = y_i
 
-    x_train = torch.reshape(x_train, (-1, batch_size, sequence_len, nb_bits)).permute(0, 1, 3, 2)
-    z_train = torch.reshape(z_train, (-1, batch_size, sequence_len, nb_bits)).permute(0, 1, 3, 2)
+    x_train = torch.reshape(x_train, (-1, batch_size, sequence_len, nb_bits)).permute(
+        0, 1, 3, 2
+    )
+    z_train = torch.reshape(z_train, (-1, batch_size, sequence_len, nb_bits)).permute(
+        0, 1, 3, 2
+    )
     y_train = torch.reshape(y_train, (-1, batch_size, 1))
 
     validation_inputs = inputs[train_samples:]
     validation_labels = labels[train_samples:]
 
-    x_val = torch.zeros((sequence_len * validation_inputs.shape[0], sequence_len, nb_bits))
-    z_val = torch.zeros((sequence_len * validation_inputs.shape[0], sequence_len, nb_bits))
+    x_val = torch.zeros(
+        (sequence_len * validation_inputs.shape[0], sequence_len, nb_bits)
+    )
+    z_val = torch.zeros(
+        (sequence_len * validation_inputs.shape[0], sequence_len, nb_bits)
+    )
     y_val = torch.zeros((sequence_len * validation_labels.shape[0], 1))
     # Loop over every single sequence
     for s_idx, (x_s, y_s) in enumerate(zip(validation_inputs, validation_labels)):
         # Loop through the sequence
         for i_idx, (x_i, y_i) in enumerate(zip(x_s, y_s)):
             x_val[s_idx * sequence_len + i_idx, :, :] = x_s
-            z_val[s_idx * sequence_len + i_idx, 0:i_idx, :] = x_s[torch.flip(y_s[0:i_idx], (0,)), :]
+            z_val[s_idx * sequence_len + i_idx, 0:i_idx, :] = x_s[
+                torch.flip(y_s[0:i_idx], (0,)), :
+            ]
             y_val[s_idx * sequence_len + i_idx, 0] = y_i
-    x_val = torch.reshape(x_val, (-1, batch_size, sequence_len, nb_bits)).permute(0, 1, 3, 2)
-    z_val = torch.reshape(z_val, (-1, batch_size, sequence_len, nb_bits)).permute(0, 1, 3, 2)
+    x_val = torch.reshape(x_val, (-1, batch_size, sequence_len, nb_bits)).permute(
+        0, 1, 3, 2
+    )
+    z_val = torch.reshape(z_val, (-1, batch_size, sequence_len, nb_bits)).permute(
+        0, 1, 3, 2
+    )
     y_val = torch.reshape(y_val, (-1, batch_size, 1))
 
     for epoch in range(nb_epochs):
@@ -205,7 +235,9 @@ def test_gated_transformer():
             denom = 0
             for x_batch, z_batch, y_batch in zip(x_val, z_val, y_val):
                 y_pred = transformer(x_batch.to(0), z_batch.to(0))
-                avg_acc += torch.sum(torch.argmax(y_pred, dim=-1) == y_batch.squeeze().to(0))
+                avg_acc += torch.sum(
+                    torch.argmax(y_pred, dim=-1) == y_batch.squeeze().to(0)
+                )
                 denom += y_batch.shape[0] * y_batch.shape[1]
             avg_acc = avg_acc / denom
             print(f"Validation Acc: {avg_acc.item(): 0.3f}")

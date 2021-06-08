@@ -52,7 +52,9 @@ class AutoRegTransformer(nn.Module):
             decoder_out = self.decoder(prev_seq, encoded_xs)
             new_outputs = self.output_layers(decoder_out)
             selected_indices = torch.argmax(new_outputs, dim=-1)
-            prev_seq[list(range(b)), :, t] = decoder_choices[list(range(b)), :, selected_indices]
+            prev_seq[list(range(b)), :, t] = decoder_choices[
+                list(range(b)), :, selected_indices
+            ]
             outputs[:, t, :] = new_outputs
 
         return outputs
@@ -85,20 +87,27 @@ def test_autoreg():
     batch_size = 64
     nb_epochs = 100
 
-    transformer = AutoRegTransformer((nb_bits, sequence_len), 1, sequence_len, False, 0.0).to(0)
+    transformer = AutoRegTransformer(
+        (nb_bits, sequence_len), 1, sequence_len, False, 0.0
+    ).to(0)
     optim = torch.optim.Adam(transformer.parameters(), 0.001)
     loss_fcn = nn.CrossEntropyLoss()
     possible_labels = list(range(1, 2 ** nb_bits))
 
     permutations = torch.tensor(
-        [np.random.choice(possible_labels, sequence_len, replace=False) for _ in range(nb_samples)]
+        [
+            np.random.choice(possible_labels, sequence_len, replace=False)
+            for _ in range(nb_samples)
+        ]
     )
     permutations = torch.cat(
         (permutations, (2 ** nb_bits) * torch.ones(permutations.shape[0], 1)), dim=1
     ).long()
     order, labels = torch.sort(permutations)
 
-    labels = torch.where(order <= (2 ** (nb_bits - 1)), labels, -1 * torch.ones_like(labels))
+    labels = torch.where(
+        order <= (2 ** (nb_bits - 1)), labels, -1 * torch.ones_like(labels)
+    )
     labels = torch.where(
         order == (2 ** (nb_bits - 1)), sequence_len * torch.ones_like(labels), labels
     )
@@ -108,17 +117,17 @@ def test_autoreg():
     training_inputs = inputs[0:train_samples]
     training_labels = labels[0:train_samples]
 
-    x_train = torch.reshape(training_inputs, (-1, batch_size, sequence_len, nb_bits)).permute(
-        0, 1, 3, 2
-    )
+    x_train = torch.reshape(
+        training_inputs, (-1, batch_size, sequence_len, nb_bits)
+    ).permute(0, 1, 3, 2)
     y_train = torch.reshape(training_labels, (-1, batch_size, sequence_len + 1))
 
     validation_inputs = inputs[train_samples:]
     validation_labels = labels[train_samples:]
 
-    x_val = torch.reshape(validation_inputs, (-1, batch_size, sequence_len, nb_bits)).permute(
-        0, 1, 3, 2
-    )
+    x_val = torch.reshape(
+        validation_inputs, (-1, batch_size, sequence_len, nb_bits)
+    ).permute(0, 1, 3, 2)
     y_val = torch.reshape(validation_labels, (-1, batch_size, sequence_len + 1))
 
     max_val_acc = 0
@@ -148,7 +157,9 @@ def test_autoreg():
                 y_pred = transformer(x_batch.to(0))
                 batch_mask = y_batch.view(-1) > 0
                 avg_acc += torch.sum(
-                    torch.argmax(y_pred.view(-1, sequence_len + 1)[batch_mask, :], dim=-1)
+                    torch.argmax(
+                        y_pred.view(-1, sequence_len + 1)[batch_mask, :], dim=-1
+                    )
                     == y_batch.view(-1)[batch_mask].to(0)
                 )
                 denom += len(y_batch.view(-1)[batch_mask])

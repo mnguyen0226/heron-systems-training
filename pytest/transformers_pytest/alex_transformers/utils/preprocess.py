@@ -152,7 +152,9 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
     SRC, TRG = create_library()
 
     # load Multi30k dataset, feature(SRC) and label(TRG), then split them into train, valid, test data
-    train_data, valid_data, test_data = Multi30k.splits(exts=(".de", ".en"), fields=(SRC, TRG))
+    train_data, valid_data, test_data = Multi30k.splits(
+        exts=(".de", ".en"), fields=(SRC, TRG)
+    )
 
     # Build vocabularies by converting any tokens that appear less than 2 times into
     # <unk> tokens
