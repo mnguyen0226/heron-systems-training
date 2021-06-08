@@ -74,3 +74,7 @@ Credit: https://github.com/bentrevett/pytorch-seq2seq
 ## Pytest API:
 - Credit: https://docs.pytest.org/en/6.2.x/contents.html
 - Transformerss PyTest: https://github.com/mnguyen0226/heron-systems-training/tree/main/transformers/gb_transformers_test
+
+## TensorBoard:
+- Credit: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
+- Source: https://github.com/mnguyen0226/heron-systems-training/tree/main/tensorboard/fashion_mnist
