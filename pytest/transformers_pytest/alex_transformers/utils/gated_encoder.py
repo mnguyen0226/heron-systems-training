@@ -4,118 +4,119 @@ from typing import Tuple
 
 import torch
 import torch.nn as nn
-from adept.network import SubModule2D
-from adept.utils.util import DotDict
+
+# from adept.network import SubModule2D
+# from adept.utils.util import DotDict
 
 
-class GatedEncoder(SubModule2D):
-    args = {}
+# class GatedEncoder(SubModule2D):
+#     args = {}
 
-    def __init__(
-        self,
-        in_shape: Tuple[int, int],
-        id: str = "Gated Encoder",
-        nb_encoders: int = 1,
-        nb_heads: int = 1,
-        do_scale: bool = True,
-        dropout: float = 0.0,
-    ):
-        """
-        The encoder layer for a gated transformer, written to be compatible as a net2d module in
-        Adept's ModularNetwork
+#     def __init__(
+#         self,
+#         in_shape: Tuple[int, int],
+#         id: str = "Gated Encoder",
+#         nb_encoders: int = 1,
+#         nb_heads: int = 1,
+#         do_scale: bool = True,
+#         dropout: float = 0.0,
+#     ):
+#         """
+#         The encoder layer for a gated transformer, written to be compatible as a net2d module in
+#         Adept's ModularNetwork
 
-        Parameters
-        ----------
-        in_shape: Tuple[int, int]
-            The input shape for the module. This should be given as [F, S] (no batch). Note that
-            this is the only input the user can give on the shape of the network. All sizing is done
-            based on this input s.t. the output shape matches the input shape.
-        id: str
-            Unique identifier for this instance.
-        nb_encoders: int
-            How many encoding layers to stack together.
-        dropout: float
-            How often to perform dropout (0.0 for never, 1.0 for always)
-        """
-        super().__init__(in_shape, id)
+#         Parameters
+#         ----------
+#         in_shape: Tuple[int, int]
+#             The input shape for the module. This should be given as [F, S] (no batch). Note that
+#             this is the only input the user can give on the shape of the network. All sizing is done
+#             based on this input s.t. the output shape matches the input shape.
+#         id: str
+#             Unique identifier for this instance.
+#         nb_encoders: int
+#             How many encoding layers to stack together.
+#         dropout: float
+#             How often to perform dropout (0.0 for never, 1.0 for always)
+#         """
+#         super().__init__(in_shape, id)
 
-        # The output shape of this network is necessarily the input shape.
-        self._out_shape = in_shape
+#         # The output shape of this network is necessarily the input shape.
+#         self._out_shape = in_shape
 
-        encoder_dict = []
-        for i in range(nb_encoders):
-            encoder_dict.append(
-                (f"encoder_{i}", Encoder(in_shape, nb_heads, do_scale, dropout))
-            )
+#         encoder_dict = []
+#         for i in range(nb_encoders):
+#             encoder_dict.append(
+#                 (f"encoder_{i}", Encoder(in_shape, nb_heads, do_scale, dropout))
+#             )
 
-        self.encoders = nn.Sequential(OrderedDict(encoder_dict))
+#         self.encoders = nn.Sequential(OrderedDict(encoder_dict))
 
-    @classmethod
-    def from_args(
-        cls, args: DotDict, in_shape: Tuple[int, int], id: str
-    ) -> "GatedEncoder":
-        """
+#     @classmethod
+#     def from_args(
+#         cls, args: DotDict, in_shape: Tuple[int, int], id: str
+#     ) -> "GatedEncoder":
+#         """
 
-        Parameters
-        ----------
-        args: DotDict
-            Arguments used to build the model. Must include key "nb_encoders"
-        in_shape: Tuple[int, int]
-            The input shape of the data (no batch shape). This should be in the order of [F, S],
-            where F is the number of features and S is the sequence length. Note that the input
-            shape provided will also be the output shape.
-        id: str
-            Unique identifier for this module
+#         Parameters
+#         ----------
+#         args: DotDict
+#             Arguments used to build the model. Must include key "nb_encoders"
+#         in_shape: Tuple[int, int]
+#             The input shape of the data (no batch shape). This should be in the order of [F, S],
+#             where F is the number of features and S is the sequence length. Note that the input
+#             shape provided will also be the output shape.
+#         id: str
+#             Unique identifier for this module
 
-        Returns
-        -------
-        GatedEncoder
-        """
-        return cls(in_shape, id, args.nb_encoders, args.nb_heads, args.dropout)
+#         Returns
+#         -------
+#         GatedEncoder
+#         """
+#         return cls(in_shape, id, args.nb_encoders, args.nb_heads, args.dropout)
 
-    def _forward(self, xs, internals, **kwargs):
-        """Forward function of the module
+#     def _forward(self, xs, internals, **kwargs):
+#         """Forward function of the module
 
-        Parameters
-        ----------
-        xs: torch.Tensor
-            [B, F, S]
-        internals
-        kwargs
+#         Parameters
+#         ----------
+#         xs: torch.Tensor
+#             [B, F, S]
+#         internals
+#         kwargs
 
-        Returns
-        -------
+#         Returns
+#         -------
 
-        """
+#         """
 
-        encoded_output = self.encoders(xs)
+#         encoded_output = self.encoders(xs)
 
-        # We return the encoded output as part of the "internals" just for testing/debugging
-        # purposes
-        return self.encoders(xs), {"attention_output": encoded_output}
+#         # We return the encoded output as part of the "internals" just for testing/debugging
+#         # purposes
+#         return self.encoders(xs), {"attention_output": encoded_output}
 
-    def _new_internals(self) -> Dict:
-        """
-        Function for generating internals for an LSTM (unused).
+#     def _new_internals(self) -> Dict:
+#         """
+#         Function for generating internals for an LSTM (unused).
 
-        Returns
-        -------
-        Dict
-            New internals (unused)
-        """
-        return {}
+#         Returns
+#         -------
+#         Dict
+#             New internals (unused)
+#         """
+#         return {}
 
-    @property
-    def _output_shape(self) -> Tuple[int, int]:
-        """
-        The output shape of this module.
+#     @property
+#     def _output_shape(self) -> Tuple[int, int]:
+#         """
+#         The output shape of this module.
 
-        Returns
-        -------
-        Tuple[int, int]
-            The output shape of the module (no batch size)
-        """
-        return self._out_shape
+#         Returns
+#         -------
+#         Tuple[int, int]
+#             The output shape of the module (no batch size)
+#         """
+#         return self._out_shape
 
 
 class Encoder(nn.Module):

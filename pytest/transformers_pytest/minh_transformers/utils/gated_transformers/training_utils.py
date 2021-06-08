@@ -61,6 +61,7 @@ def train(
     epoch_loss / len(iterator): float
         Loss percentage during training
     """
+
     model.train()
 
     epoch_loss = 0
@@ -69,6 +70,11 @@ def train(
 
         src = batch.src
         trg = batch.trg
+
+        print("TESTING")
+        print(src.shape)
+        print(trg.shape)
+        
 
         optimizer.zero_grad()
 

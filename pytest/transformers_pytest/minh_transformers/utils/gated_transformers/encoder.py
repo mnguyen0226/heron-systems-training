@@ -66,6 +66,9 @@ class Encoder(nn.Module):
 
         Return
         ----------
+
+        
+
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """

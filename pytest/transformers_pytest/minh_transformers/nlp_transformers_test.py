@@ -91,7 +91,7 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
     # Initializes model
-    model = Seq2Seq(enc, dec, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device)
+    model = Seq2Seq(encoder=enc, decoder=dec, src_pad_idx=SRC_PAD_IDX, trg_pad_idx=TRG_PAD_IDX, device=device).to(device)
 
     # Initializes the model's weights
     model.apply(initialize_weights)
