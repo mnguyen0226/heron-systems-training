@@ -1,0 +1,40 @@
+* How the data is passed through the Encoder
+
+- The input/source sentence "guten morgen" is passed through the embedding layers, and then into the 
+the encoder 
+- We also append a <sos> and <eos> token to the start and end of sentence 
+- For example, Here, we have X = {x_1, x_2, ..., x_T}, where x_1 = <sos>, x_2 = guten
+    + The initial hidden state, h_0 is usually either initialized to zeroes or a learned parameter
+- Once the final word, x_T has been passed into the ENN via the embedding layer, we use the final hidden state, h_T, as the context vector, ie h_T = z.
+    This is a vector representation of the entire source sentence
+=> This is the context vector
+
+* How the data is passed through the Decoder
+
+- After the Encoder, we have the context vector, we can start decoding it to get the output/target sentence "good morning"...
+- We append the <sos> and <eos> tokens to the target sentence.
+- At each time-step, the input to the decoder is embedding of the current word as well as the hidden state from the
+the previous time-step where the initial decoder hidden state is the context vector
+----------------------------------------------
+- We will be using spaCy to assist tokenizing the data
+- We set random seeds for deterministic result = provide the same randomization everytime
+- Create a tokenizer. A tokenizer is used to turn a string containing a sentence into a list of individual tokens
+that make up that string. Note: Token = "~", "hi", "!"
+    + spaCy has model for each language which is need to be load so we can access the tokenizer of each model
+- We then create the tokenizer functions which passes in the input string and return a sentence f list of token
+- Torchtext's Field handle how data should be process
+- We then download ad load the train, validation, test data
+    + this dataset contain ~30k parallel English and German with ~12 words persentence
+    + "exts" specifies which languages to use as the source and target and "field" for source and target
+
+- We will then build the vocab for the source and target languages. The vocab is used to associate each unique token with an index
+    + The vocab of the source (German) and target (English) are distinct
+    + Tokens that appear once are converted ino <unk>
+
+- Note that the vocab should only be build from the training dataset not the validation/test set
+    + This prevents "info leakage" into our model
+
+- Then we create an iterators: Return batch of src and trg attribute (numbericalized sentences)
+    + numbericalized = the tokened sentence has been convert from sequence of readable tokens to the seuqnce of corresponding index
+
+- BucketIterator is used instead of standard Iterator as it creates batches in such a way that it minimizes the around of padding in both source and target sentences

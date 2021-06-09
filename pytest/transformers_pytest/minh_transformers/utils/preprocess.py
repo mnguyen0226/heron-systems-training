@@ -154,10 +154,19 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
     # load Multi30k dataset, feature(SRC) and label(TRG), then split them into train, valid, test data
     train_data, valid_data, test_data = Multi30k.splits(exts=(".de", ".en"), fields=(SRC, TRG))
 
+    print(f"Number of training examples: {len(train_data.examples)}")
+    print(f"Number of validating examples: {len(valid_data.examples)}")
+    print(f"Number of testing examples: {len(test_data.examples)}")
+
+    print(vars(train_data.examples[0]))
+
     # Build vocabularies by converting any tokens that appear less than 2 times into
     # <unk> tokens
     SRC.build_vocab(train_data, min_freq=2)
     TRG.build_vocab(train_data, min_freq=2)
+
+    print(f"Unique tokens in source (de) vocabulary: {len(SRC.vocab)}")
+    print(f"Unique tokens in target (en) vocabulary: {len(TRG.vocab)}")
 
     train_iterator, valid_iterator, test_iterator = data_iter(
         device=device,
@@ -166,5 +175,9 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         valid_data=valid_data,
         test_data=test_data,
     )
+
+
+
+ 
 
     return train_iterator, valid_iterator, test_iterator, SRC, TRG
