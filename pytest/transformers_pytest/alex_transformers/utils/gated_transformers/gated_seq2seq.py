@@ -114,7 +114,7 @@ class Seq2Seq(nn.Module):
 
         return trg_mask
 
-    def forward(self, src):
+    def forward(self, src, trg):
         """Feed-forward function of the Seq2Seq
 
         Parameters
@@ -133,3 +133,15 @@ class Seq2Seq(nn.Module):
         """    
         src_mask = self.make_src_mask(src=src)
         trg_mask = self.make_trg_mask(trg=trg)
+
+        # src_mask = [batch size, 1, 1, src len]
+        # trg_mask = [batch size, 1, trg len, trg len]
+
+        enc_src = self.encoder(trg, src_mask)
+        # enc_src = [batch size, src len, hid dim]
+
+        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        # output = [batch size, trg len, output dim]
+        # attention = [batch size, n heads, trg len, src len]       
+
+        return output, attention
