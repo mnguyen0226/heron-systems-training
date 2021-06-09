@@ -6,11 +6,17 @@ from adept.network import SubModule2D
 from adept.utils.util import DotDict
 from torch import nn
 
-from gamebreaker.classifier.network.gated_encoder import Attn
-from gamebreaker.classifier.network.gated_encoder import Encoder
-from gamebreaker.classifier.network.gated_encoder import Gate
-from gamebreaker.classifier.network.gated_encoder import LNorm
-from gamebreaker.classifier.network.gated_encoder import Projection
+# from gamebreaker.classifier.network.gated_encoder import Attn
+# from gamebreaker.classifier.network.gated_encoder import Encoder
+# from gamebreaker.classifier.network.gated_encoder import Gate
+# from gamebreaker.classifier.network.gated_encoder import LNorm
+# from gamebreaker.classifier.network.gated_encoder import Projection
+
+from utils.gated_transformers.gated_encoder import Attn
+from utils.gated_transformers.gated_encoder import Encoder
+from utils.gated_transformers.gated_encoder import Gate
+from utils.gated_transformers.gated_encoder import LNorm
+from utils.gated_transformers.gated_encoder import Projection
 
 
 class Decoder(nn.Module):

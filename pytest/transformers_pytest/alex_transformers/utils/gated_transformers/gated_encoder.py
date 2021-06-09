@@ -119,7 +119,7 @@ import torch.nn as nn
 #         return self._out_shape
 
 
-class Encoder(nn.Module):
+class Encoder(nn.Module): # this is basically the EncoderLayer() class
     def __init__(
         self,
         in_shape: Tuple[int, int],
