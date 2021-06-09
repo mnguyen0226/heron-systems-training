@@ -120,9 +120,10 @@ import torch.nn as nn
 
 
 class Encoder(nn.Module): # this is basically the EncoderLayer() class
+    # we assume to have 1 layer with no device
     def __init__(
         self,
-        in_shape: Tuple[int, int],
+        in_shape: Tuple[int, int], # [features, sequence] = [number of word, number of float represent that word]
         nb_heads: int,
         do_scale: bool,
         dropout: float = 0.0,

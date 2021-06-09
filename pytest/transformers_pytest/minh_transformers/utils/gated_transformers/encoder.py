@@ -9,7 +9,7 @@ class Encoder(nn.Module):
     def __init__(
         self,
         input_dim: int,
-        hid_dim: int,
+        hid_dim: int, # why does this important?
         n_layers: int,
         n_heads: int,
         pf_dim: int,
@@ -75,9 +75,6 @@ class Encoder(nn.Module):
 
         Return
         ----------
-
-
-
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """
@@ -96,15 +93,18 @@ class Encoder(nn.Module):
         )
 
         for layer in self.layers:
-            # src = [batch_size, src_len, hid_dim]
+            # src = [batch_size, src_len, hid_dim] = [batch_size, frequency, hidden layer dim]
             src = layer(src, src_mask)
+
+            print(f"TESTING Encoder output: {src.shape}")
 
         return src
 
 
-class LNorm(nn.Module):
-    def __init__(self, normalized_shape: int):
+class LNorm(nn.Module): 
+    def __init__(self, normalized_shape: int): # normalized_shape = hidden_dim
         """Layer Normalization for both Encoder & Decoder
+        This takes the same input as after the Embedding layer
 
         Parameters
         ----------
@@ -112,9 +112,9 @@ class LNorm(nn.Module):
             input shape (hid_dim) of the Encoder and Decoder
         """
         super().__init__()
-        self.layer_norm = nn.LayerNorm(normalized_shape=normalized_shape)
+        self.layer_norm = nn.LayerNorm(normalized_shape=normalized_shape) # initialized the input normalized layer
 
-    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:
+    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]: # use the layer
         """Feed-forward function of the Layer Normalization function
 
         Parameters
@@ -136,7 +136,7 @@ class Gate(nn.Module):
             input hidden dimension (of the Encoder & Decoder)
         """
         super().__init__()
-        self.gru = nn.GRU(input_size=hid_dim, hidden_size=hid_dim)
+        self.gru = nn.GRU(input_size=hid_dim, hidden_size=hid_dim) # two input layer for the GRU
 
     def forward(
         self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
@@ -151,7 +151,7 @@ class Gate(nn.Module):
         original_input.shape: [batch size, src len, hid dim]
             the input preprocessed text tokens
         """
-        b, f, s = original_input.shape
+        b, f, s = original_input.shape # Split the input shape
 
         # Permute the x and y so that the shape is now [B,S,F]
         original_input_permuted = original_input.permute(0, 2, 1)
@@ -218,26 +218,40 @@ class GatedEncoderLayer(nn.Module):
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """
+        # print(f"TESTING: Shape before into the 1st layer norm: {src.shape}")
+
         # first layer norm - already dropped out from Encoder class
         src = self.first_layer_norm(src)
 
+        # print(f"TESTING: Shape before into the self attention layer: {src.shape}")
+
         # self-attention
         _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask)
+
+        # print(f"TESTING: Shape before into the 1st gated output: {_src.shape}")
 
         first_gate_output, _ = self.first_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
 
+        # print(f"TESTING: Shape before into the 2nd layer norm: { first_gate_output.shape}")
+
         # second layer norm - already dropped from first gate
         src = self.second_layer_norm(first_gate_output)
 
+        # print(f"TESTING: Shape before into the feed forward {src.shape}")
+
         # positionwise feedforward
         _src = self.positionwise_feedforward(src)
+
+        # print(f"TESTING: Shape before into the 2nd gated output: {_src.shape}")
 
         # second gate
         second_gate_output, _ = self.second_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
+
+        # print(f"TESTING: Shape before into the decoder {second_gate_output.shape}")
 
         return second_gate_output
 
@@ -360,7 +374,7 @@ class MultiHeadAttentionLayer(nn.Module):
         return x, attention
 
 
-class PositionwiseFeedforwardLayer(nn.Module):
+class PositionwiseFeedforwardLayer(nn.Module): # I can specify the pf dim
     def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
         """Positionwise Feedforward layer of GatedEncoderLayer
         Why is this used? Unfortunately, it is never explained in the paper.
