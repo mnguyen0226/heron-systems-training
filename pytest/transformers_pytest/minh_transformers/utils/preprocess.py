@@ -7,6 +7,11 @@ import spacy
 import numpy as np
 import random
 from typing import Tuple
+import sys
+
+np.set_printoptions(threshold=sys.maxsize)
+torch.set_printoptions(edgeitems=sys.maxsize)
+
 
 # keep the same randomized seed to get the same randomization everytime
 SEED = 1234
@@ -181,6 +186,13 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         test_data=test_data,
     )
 
-    print(f"Training iterator {train_iterator.shape}")
+    print(
+        f"First batch Train Iterator: {next(iter(train_iterator))}"
+    )  # this is the shape passed into the neural network
+    print(f"First batch Validate Iterator: {next(iter(valid_iterator))}")
+    print(f"First batch Test Iterator: {next(iter(test_iterator))}")
+
+    # the shape is [batch_size, frequency = number of words, sequence = number of elements]
+    # we only pass in the neural network [batch_size, frequency]
 
     return train_iterator, valid_iterator, test_iterator, SRC, TRG

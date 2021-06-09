@@ -31,10 +31,10 @@ class Seq2Seq(nn.Module):
 
         """
         super().__init__()
-        self.encoder = encoder
-        self.decoder = decoder
-        self.src_pad_idx = src_pad_idx
-        self.trg_pad_idx = trg_pad_idx
+        self.encoder = encoder  # Encoder Layer
+        self.decoder = decoder  # Decoder Layer
+        self.src_pad_idx = src_pad_idx  # input number of a word
+        self.trg_pad_idx = trg_pad_idx  # target number of a world
         self.device = device
 
     def make_src_mask(self, src: Tuple[int, int, int]) -> Tuple[int, int, int, int]:
@@ -109,6 +109,11 @@ class Seq2Seq(nn.Module):
         # src = [batch size, src len]
         # trg = [batch size, trg len]
 
+        print("RUNNING the seq2seq")
+        print(f"The shape of the src original transformer is {src.shape}")
+        print(f"The shape of the trg original transformer is {trg.shape}")
+
+        # src & trg mask allows the attention mechanism not pay attention to <pad>
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)
 

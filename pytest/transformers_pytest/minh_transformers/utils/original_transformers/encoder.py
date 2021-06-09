@@ -42,6 +42,10 @@ class Encoder(nn.Module):
         """
         super().__init__()
         self.device = device
+
+        # These two layers are just for preprocessing.
+        # Since this is not a recurrent neural network, the model has no idea about the order of the tokens within the sequence
+        # We solve this by using the positional embedding layers. <sos> has position 0
         self.tok_embedding = nn.Embedding(
             num_embeddings=input_dim, embedding_dim=hid_dim
         )  # input, output
@@ -93,7 +97,7 @@ class Encoder(nn.Module):
         )  # have to dropout to get the same dim in the Encoder Layer
         # src = [batch_size, src_len, hid_dim]
 
-        for layer in self.layers:
+        for layer in self.layers:  # This is the Layers Encoder number
             src = layer(src, src_mask)
         # src = [batch_size, src_len, hid_dim]
 

@@ -73,7 +73,7 @@ def train(
 
         optimizer.zero_grad()
 
-        output, _ = model(src, trg[:, :-1])
+        output, _ = model(src, trg[:, :-1])  # This is where the Seq2Seq is used
 
         # output = [batch size, trg len - 1, output dim]
         # trg = [batch size, trg len]

@@ -70,11 +70,6 @@ def train(
 
         src = batch.src
         trg = batch.trg
-
-        print("TESTING")
-        print(src.shape)
-        print(trg.shape)
-
         optimizer.zero_grad()
 
         output, _ = model(src, trg[:, :-1])

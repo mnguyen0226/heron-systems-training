@@ -82,7 +82,7 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
     CLIP = 1
     LEARNING_RATE = 0.0005
 
-    # Initializes Encoder layers
+    # Initializes Encoder layers, not putting input sentence
     enc = Encoder(
         input_dim=INPUT_DIM,
         hid_dim=HID_DIM,
@@ -95,9 +95,9 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
 
     # Initializes Decoder layers
     dec = Decoder(
-        input_dim=OUTPUT_DIM,
+        output_dim=OUTPUT_DIM,
         hid_dim=HID_DIM,
-        n_layer=GATED_DEC_LAYERS,
+        n_layers=GATED_DEC_LAYERS,
         n_heads=GATED_DEC_HEADS,
         pf_dim=DEC_PF_DIM,
         dropout=DEC_DROPOUT,
@@ -107,6 +107,9 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
     # Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
+
+    print(f"Tokenized SRC: {SRC.pad_token}")  # <pad>
+    print(f"Numericalized SRC_PAD_IDX: {SRC_PAD_IDX}")  # <pad> is numericalized into 1
 
     # Initializes model
     model = Seq2Seq(
@@ -126,7 +129,7 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
     # Initializes Cross Entropy Loss Function
     criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
 
-    # Variables for printint format
+    # Variables for printing format
     gated_transformers_enc_layers = GATED_ENC_LAYERS
     gated_transformers_dec_layers = GATED_DEC_LAYERS
     gated_transformers_enc_n_heads = GATED_ENC_HEADS
@@ -203,8 +206,8 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     train_iterator, valid_iterator, test_iterator, SRC, TRG = run_preprocess()
 
     # Initialize variables for Gated Transformers. This can be adjusted
-    INPUT_DIM = len(SRC.vocab)
-    OUTPUT_DIM = len(TRG.vocab)
+    INPUT_DIM = len(SRC.vocab)  # 7853
+    OUTPUT_DIM = len(TRG.vocab)  # 5893
     HID_DIM = 256
     ENC_LAYERS = 3
     DEC_LAYERS = 3
@@ -233,9 +236,9 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
 
     # Initializes Decoder layers
     dec = Decoder(
-        input_dim=OUTPUT_DIM,
+        output_dim=OUTPUT_DIM,
         hid_dim=HID_DIM,
-        n_layer=DEC_LAYERS,
+        n_layers=DEC_LAYERS,
         n_heads=DEC_HEADS,
         pf_dim=DEC_PF_DIM,
         dropout=DEC_DROPOUT,
@@ -243,8 +246,10 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     )
 
     # Define whole Seq2Seq encapsulating model
-    SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
+    SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]  # This convert the SRC eos & sos to 1
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
+
+    print(f"TESTING {SRC.pad_token}")
 
     # Initializes model
     model = Seq2Seq(enc, dec, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device)
@@ -310,16 +315,6 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
 
 ########################################################################
 # Test
-# Run training Gated Transformers
-(
-    gated_transformers_training_loss,
-    gated_transformers_validating_loss,
-    gated_transformers_training_PPL,
-    gated_transformers_validating_PPL,
-    gated_transformers_testing_loss,
-    gated_transformers_testing_PPL,
-) = gated_model_train()
-
 # Run training Original Transformers
 (
     origin_transformers_training_loss,
@@ -329,6 +324,16 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     origin_transformers_testing_loss,
     origin_transformers_testing_PPL,
 ) = original_model_train()
+
+# Run training Gated Transformers
+(
+    gated_transformers_training_loss,
+    gated_transformers_validating_loss,
+    gated_transformers_training_PPL,
+    gated_transformers_validating_PPL,
+    gated_transformers_testing_loss,
+    gated_transformers_testing_PPL,
+) = gated_model_train()
 
 
 class TestGatedTransformersTrainingSet:
