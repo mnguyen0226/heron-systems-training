@@ -51,7 +51,10 @@ class Encoder(nn.Module):
 
         # this is submodule that can be repeat 6 times
         self.layers = nn.ModuleList(
-            [EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
         self.dropout = nn.Dropout(dropout)
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(
@@ -80,7 +83,9 @@ class Encoder(nn.Module):
         src_len = src.shape[1]
 
         # positional vector
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
         # pos = [batch_size, src_len]
 
         src = self.dropout(
@@ -96,7 +101,9 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """EncoderLayer of the Encoder of Transformer contains Multi-Head Attention, Add&Normal,
             Feed-forward, Add&Norm
 
@@ -121,7 +128,9 @@ class EncoderLayer(nn.Module):
             hid_dim
         )  # initialized the norm for feed forward, dim reserved
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+            hid_dim, pf_dim, dropout
+        )
         self.dropout = nn.Dropout(dropout)  # dropout rate 0.1 for Encoder
 
     def forward(
@@ -301,7 +310,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
             dropout rate: 0.1 for encoder
         """
         super().__init__()
-        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim)  # linear transformation
+        self.fc_1 = nn.Linear(
+            in_features=hid_dim, out_features=pf_dim
+        )  # linear transformation
         self.fc_2 = nn.Linear(
             in_features=pf_dim, out_features=hid_dim
         )  # linear transformation # make sure to conert back from pf_dim to hid_dim
@@ -321,7 +332,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
         x: [batch size, seq len, hid dim]
             output to Add&Norm Layer
         """
-        x = self.dropout(torch.relu(self.fc_1(x)))  # relu then dropout to contain same infor
+        x = self.dropout(
+            torch.relu(self.fc_1(x))
+        )  # relu then dropout to contain same infor
         # x = [batch size, seq len, pf dim] OR [batch size, src len, hid dim]
 
         x = self.fc_2(x)

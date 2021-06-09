@@ -184,7 +184,9 @@ def origin_transformers_main(
     math.exp(valid_loss): float
         validating PPL
     """
-    print(f"The original transformers model has {count_parameters(model):,} trainable parameters")
+    print(
+        f"The original transformers model has {count_parameters(model):,} trainable parameters"
+    )
 
     best_valid_loss = float("inf")
 
@@ -204,13 +206,19 @@ def origin_transformers_main(
             torch.save(model.state_dict(), "original-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}")
-        print(f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(
+            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
+        )
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
 
-def test_origin_transformers_model(model, test_iterator, criterion) -> Tuple[float, float]:
+def test_origin_transformers_model(
+    model, test_iterator, criterion
+) -> Tuple[float, float]:
     """Tests the trained origin transformers model with the testing dataset
 
     Return

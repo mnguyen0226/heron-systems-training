@@ -42,14 +42,23 @@ class Encoder(nn.Module):
         """
         super().__init__()
         self.device = device
-        self.tok_embedding = nn.Embedding(num_embeddings=input_dim, embedding_dim=hid_dim)
-        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
+        self.tok_embedding = nn.Embedding(
+            num_embeddings=input_dim, embedding_dim=hid_dim
+        )
+        self.pos_embedding = nn.Embedding(
+            num_embeddings=max_length, embedding_dim=hid_dim
+        )
 
         self.layers = nn.ModuleList(
-            [GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
         self.dropout = nn.Dropout(dropout)
-        self.scale = hid_dim ** 0.5  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        self.scale = (
+            hid_dim ** 0.5
+        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self, src: Tuple[int, int], src_mask: Tuple[int, int, int, int]
@@ -67,7 +76,7 @@ class Encoder(nn.Module):
         Return
         ----------
 
-        
+
 
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
@@ -76,11 +85,15 @@ class Encoder(nn.Module):
         src_len = src.shape[1]
 
         # positional vector. pos = [batch_size, src_len]
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
 
         # src = [batch_size, src_len, hid_dim]. Here we dropout the input source so we have to dropout
         # before doing Gating Layer
-        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
+        src = self.dropout(
+            (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
+        )
 
         for layer in self.layers:
             # src = [batch_size, src_len, hid_dim]
@@ -156,7 +169,9 @@ class Gate(nn.Module):
 
 
 class GatedEncoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """Gated Encoder layer of Encoder of the Transformer
 
         Parameters
@@ -178,7 +193,9 @@ class GatedEncoderLayer(nn.Module):
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+            hid_dim, pf_dim, dropout
+        )
         self.second_gate = Gate(hid_dim=hid_dim)
 
         self.dropout = nn.Dropout(dropout)
@@ -242,7 +259,9 @@ class MultiHeadAttentionLayer(nn.Module):
         """
         super().__init__()
 
-        assert hid_dim % n_heads == 0  # make sure that number of multiheads are concatenatable
+        assert (
+            hid_dim % n_heads == 0
+        )  # make sure that number of multiheads are concatenatable
 
         self.hid_dim = hid_dim
         self.n_heads = n_heads
@@ -263,7 +282,9 @@ class MultiHeadAttentionLayer(nn.Module):
         )  # apply linear transformation
 
         self.dropout = nn.Dropout(dropout)
-        self.scale = hid_dim ** 0.5  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        self.scale = (
+            hid_dim ** 0.5
+        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
@@ -357,7 +378,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.fc_1 = nn.Linear(in_features=hid_dim, out_features=pf_dim)  # linear transformation
+        self.fc_1 = nn.Linear(
+            in_features=hid_dim, out_features=pf_dim
+        )  # linear transformation
         self.fc_2 = nn.Linear(
             in_features=pf_dim, out_features=hid_dim
         )  # linear transformation # make sure to conert back from pf_dim to hid_dim
@@ -377,7 +400,9 @@ class PositionwiseFeedforwardLayer(nn.Module):
             output to the second gate layer
         """
         # x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
-        x = self.dropout(torch.relu(self.fc_1(x)))  # relu then dropout to contain same infor
+        x = self.dropout(
+            torch.relu(self.fc_1(x))
+        )  # relu then dropout to contain same infor
 
         # x = [batch size, seq len, hid dim] OR [batch size, src len, hid dim]
         x = self.fc_2(x)

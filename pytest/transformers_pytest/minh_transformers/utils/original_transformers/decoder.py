@@ -55,12 +55,19 @@ class Decoder(nn.Module):
 
         self.device = device
 
-        self.tok_embedding = nn.Embedding(num_embeddings=output_dim, embedding_dim=hid_dim)
-        self.pos_embedding = nn.Embedding(num_embeddings=max_length, embedding_dim=hid_dim)
+        self.tok_embedding = nn.Embedding(
+            num_embeddings=output_dim, embedding_dim=hid_dim
+        )
+        self.pos_embedding = nn.Embedding(
+            num_embeddings=max_length, embedding_dim=hid_dim
+        )
 
         # DecoderLayer
         self.layers = nn.ModuleList(
-            [DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)]
+            [
+                DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                for _ in range(n_layers)
+            ]
         )
 
         # Linear of the output
@@ -103,10 +110,14 @@ class Decoder(nn.Module):
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        pos = (
+            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+        )
         # pos = [batch size, trg len]
 
-        trg = self.dropout((self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos))
+        trg = self.dropout(
+            (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
+        )
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:
@@ -121,7 +132,9 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str):
+    def __init__(
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+    ):
         """DecoderLayer for the Decoder which contains of:
             + Masked Multi-Head Attention - "self-attention"
             + Add&Norm

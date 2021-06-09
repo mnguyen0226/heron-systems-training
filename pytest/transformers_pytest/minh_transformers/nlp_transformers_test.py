@@ -56,7 +56,13 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
         Gated Transformers testing PPL
     """
     # Initialize iterator, SRC field, and TRG field
-    train_iterator, valid_iterator, test_iterator, SRC, TRG = run_preprocess()
+    (
+        train_iterator,
+        valid_iterator,
+        test_iterator,
+        SRC,
+        TRG,
+    ) = run_preprocess()  # this can't be subscripted
 
     # Initialize variables for Gated Transformers. This can be adjusted
     INPUT_DIM = len(SRC.vocab)
@@ -78,20 +84,38 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
 
     # Initializes Encoder layers
     enc = Encoder(
-        INPUT_DIM, HID_DIM, GATED_ENC_LAYERS, GATED_ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device
+        input_dim=INPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=GATED_ENC_LAYERS,
+        n_heads=GATED_ENC_HEADS,
+        pf_dim=ENC_PF_DIM,
+        dropout=ENC_DROPOUT,
+        device=device,
     )
 
     # Initializes Decoder layers
     dec = Decoder(
-        OUTPUT_DIM, HID_DIM, GATED_DEC_LAYERS, GATED_DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device
+        input_dim=OUTPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layer=GATED_DEC_LAYERS,
+        n_heads=GATED_DEC_HEADS,
+        pf_dim=DEC_PF_DIM,
+        dropout=DEC_DROPOUT,
+        device=device,
     )
 
-    # Defines whole Seq2Seq encapsulating model
+    # Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
     # Initializes model
-    model = Seq2Seq(encoder=enc, decoder=dec, src_pad_idx=SRC_PAD_IDX, trg_pad_idx=TRG_PAD_IDX, device=device).to(device)
+    model = Seq2Seq(
+        encoder=enc,
+        decoder=dec,
+        src_pad_idx=SRC_PAD_IDX,
+        trg_pad_idx=TRG_PAD_IDX,
+        device=device,
+    ).to(device)
 
     # Initializes the model's weights
     model.apply(initialize_weights)
@@ -141,7 +165,9 @@ def gated_model_train() -> Tuple[float, float, float, float, float, float]:
     (
         gated_transformers_testing_loss,
         gated_transformers_testing_PPL,
-    ) = test_gated_transformers_model(model=model, test_iterator=test_iterator, criterion=criterion)
+    ) = test_gated_transformers_model(
+        model=model, test_iterator=test_iterator, criterion=criterion
+    )
 
     return (
         gated_transformers_training_loss,
@@ -195,10 +221,26 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     LEARNING_RATE = 0.0005
 
     # Initializes Encoder layers
-    enc = Encoder(INPUT_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device)
+    enc = Encoder(
+        input_dim=INPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=ENC_LAYERS,
+        n_heads=ENC_HEADS,
+        pf_dim=ENC_PF_DIM,
+        dropout=ENC_DROPOUT,
+        device=device,
+    )
 
     # Initializes Decoder layers
-    dec = Decoder(OUTPUT_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device)
+    dec = Decoder(
+        input_dim=OUTPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layer=DEC_LAYERS,
+        n_heads=DEC_HEADS,
+        pf_dim=DEC_PF_DIM,
+        dropout=DEC_DROPOUT,
+        device=device,
+    )
 
     # Define whole Seq2Seq encapsulating model
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
@@ -307,7 +349,9 @@ class TestGatedTransformersTrainingSet:
     def test_training_PPL(self):
         """Validates the training PPL of gated transformers < original transformers'"""
         global gated_transformers_training_PPL, origin_transformers_training_PPL
-        assert Decimal(gated_transformers_training_PPL) < Decimal(origin_transformers_training_PPL)
+        assert Decimal(gated_transformers_training_PPL) < Decimal(
+            origin_transformers_training_PPL
+        )
 
     def test_validating_PPL(self):
         """Validates the validating PPL of gated transfomers < original transformers'"""
@@ -321,9 +365,13 @@ class TestGatedTransformersTestingSet:
     def test_testing_loss(self):
         """Validates the testing loss of the gated transformers < origin transformers'"""
         global gated_transformers_testing_loss, origin_transformers_testing_loss
-        assert Decimal(gated_transformers_testing_loss) < Decimal(origin_transformers_testing_loss)
+        assert Decimal(gated_transformers_testing_loss) < Decimal(
+            origin_transformers_testing_loss
+        )
 
     def test_testing_PPL(self):
         """Validates the testing PPL of the gated transformers < origin transformers'"""
         global gated_transformers_testing_PPL, origin_transformers_testing_PPL
-        assert Decimal(gated_transformers_testing_PPL) < Decimal(origin_transformers_testing_PPL)
+        assert Decimal(gated_transformers_testing_PPL) < Decimal(
+            origin_transformers_testing_PPL
+        )

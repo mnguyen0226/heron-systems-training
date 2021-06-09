@@ -152,22 +152,27 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
     SRC, TRG = create_library()
 
     # load Multi30k dataset, feature(SRC) and label(TRG), then split them into train, valid, test data
-    train_data, valid_data, test_data = Multi30k.splits(exts=(".de", ".en"), fields=(SRC, TRG))
+    train_data, valid_data, test_data = Multi30k.splits(
+        exts=(".de", ".en"), fields=(SRC, TRG)
+    )
 
+    # used to validates the training, validating, and testing
     print(f"Number of training examples: {len(train_data.examples)}")
     print(f"Number of validating examples: {len(valid_data.examples)}")
     print(f"Number of testing examples: {len(test_data.examples)}")
 
     print(vars(train_data.examples[0]))
 
-    # Build vocabularies by converting any tokens that appear less than 2 times into
+    # build vocabularies by converting any tokens that appear less than 2 times into
     # <unk> tokens
     SRC.build_vocab(train_data, min_freq=2)
     TRG.build_vocab(train_data, min_freq=2)
 
+    # used to check the source & target vocab
     print(f"Unique tokens in source (de) vocabulary: {len(SRC.vocab)}")
     print(f"Unique tokens in target (en) vocabulary: {len(TRG.vocab)}")
 
+    # create iterator too splite the training, validating, and testing to batch size
     train_iterator, valid_iterator, test_iterator = data_iter(
         device=device,
         batch_size=BATCH_SIZE,
@@ -176,8 +181,6 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         test_data=test_data,
     )
 
-
-
- 
+    print(f"Training iterator {train_iterator.shape}")
 
     return train_iterator, valid_iterator, test_iterator, SRC, TRG

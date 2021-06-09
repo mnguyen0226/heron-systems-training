@@ -74,7 +74,6 @@ def train(
         print("TESTING")
         print(src.shape)
         print(trg.shape)
-        
 
         optimizer.zero_grad()
 
@@ -189,7 +188,9 @@ def gated_transformers_main(
     math.exp(valid_loss): float
         validating PPL
     """
-    print(f"The gated transformers model has {count_parameters(model):,} trainable parameters")
+    print(
+        f"The gated transformers model has {count_parameters(model):,} trainable parameters"
+    )
 
     best_valid_loss = float("inf")
 
@@ -209,13 +210,19 @@ def gated_transformers_main(
             torch.save(model.state_dict(), "gated-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}")
-        print(f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(
+            f"\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}"
+        )
 
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
 
-def test_gated_transformers_model(model, test_iterator, criterion) -> Tuple[float, float]:
+def test_gated_transformers_model(
+    model, test_iterator, criterion
+) -> Tuple[float, float]:
     """Tests the trained gated transformers model with testing dataset
 
     Return
@@ -225,7 +232,9 @@ def test_gated_transformers_model(model, test_iterator, criterion) -> Tuple[floa
     math.exp(test_loss):
         Testing PPL
     """
-    model.load_state_dict(torch.load("gated-tut6-model.pt", map_location=torch.device("cpu")))
+    model.load_state_dict(
+        torch.load("gated-tut6-model.pt", map_location=torch.device("cpu"))
+    )
 
     test_loss = evaluate(model, test_iterator, criterion)
 

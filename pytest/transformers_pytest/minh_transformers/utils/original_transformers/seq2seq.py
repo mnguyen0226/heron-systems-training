@@ -77,7 +77,9 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
+        trg_sub_mask = torch.tril(
+            torch.ones((trg_len, trg_len), device=self.device)
+        ).bool()
         # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
@@ -85,7 +87,9 @@ class Seq2Seq(nn.Module):
 
         return trg_mask
 
-    def forward(self, src: Tuple[int, int], trg: Tuple[int, int]) -> Tuple[tuple, tuple]:
+    def forward(
+        self, src: Tuple[int, int], trg: Tuple[int, int]
+    ) -> Tuple[tuple, tuple]:
         """Feed-forward function of the Seq2Seq
 
         Parameters
