@@ -1,14 +1,14 @@
 # pytest script that make sure that the final train/validate PPL of actual gated transformers
 # we want to see that the gated transformers is better than "Attention Is All You Need" Transformers
-# we want the Train Loss, Val Loss, Train PPL, and Val PPL to be lower than the 
+# we want the Train Loss, Val Loss, Train PPL, and Val PPL to be lower than the
 
-# goals: 
+# goals:
 # 1. have the code compile
 # 2. compare results with the original
 # 3. Tweak the parameters
 
 # this file call Encoder, Decoder, Seq2Seq, Preprocess, and Training Function
-# 
+#
 
 from decimal import Decimal
 from typing import Tuple
@@ -16,7 +16,10 @@ import torch
 import torch.nn as nn
 from utils.preprocess import run_preprocess, device
 
-from utils.original_transformers.training_utils import (origin_transformers_main, test_origin_transformers_model)
+from utils.original_transformers.training_utils import (
+    origin_transformers_main,
+    test_origin_transformers_model,
+)
 from utils.original_transformers.encoder import Encoder
 from utils.original_transformers.decoder import Decoder
 from utils.original_transformers.seq2seq import Seq2Seq
@@ -34,8 +37,8 @@ from utils.gated_transformers.gated_training_utils import *
 ########################################################################
 # Gated Transformer Train
 def gated_model_train():
-    """Runs preprocessing code, initializes parameters, generates models, optimizers, criterion, 
-        and run the trainining function
+    """Runs preprocessing code, initializes parameters, generates models, optimizers, criterion,
+    and run the trainining function
     """
     # Initialize iterator, SRC field, and TRG field
     (
@@ -74,7 +77,6 @@ def gated_model_train():
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-
     # Initializes the model's weights
 
     # Initializes Adam Optimizer
@@ -86,7 +88,6 @@ def gated_model_train():
     gated_transformers_dec_layers = GATED_DEC_LAYERS
     gated_transformers_enc_n_heads = GATED_ENC_HEADS
     gated_transformers_dec_n_heads = GATED_DEC_HEADS
-
 
     # results from Gated Transformers
     print(
@@ -102,6 +103,7 @@ def gated_model_train():
     print("-----------------------------------------")
 
     return
+
 
 if __name__ == "__main__":
     gated_model_train()

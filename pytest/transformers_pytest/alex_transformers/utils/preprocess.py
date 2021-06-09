@@ -8,6 +8,7 @@ import numpy as np
 import random
 from typing import Tuple
 import sys
+
 np.set_printoptions(threshold=sys.maxsize)
 torch.set_printoptions(edgeitems=sys.maxsize)
 
@@ -185,7 +186,9 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         test_data=test_data,
     )
 
-    print(f"First batch Train Iterator: {next(iter(train_iterator))}") # this is the shape passed into the neural network
+    print(
+        f"First batch Train Iterator: {next(iter(train_iterator))}"
+    )  # this is the shape passed into the neural network
     print(f"First batch Validate Iterator: {next(iter(valid_iterator))}")
     print(f"First batch Test Iterator: {next(iter(test_iterator))}")
 
