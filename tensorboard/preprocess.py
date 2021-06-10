@@ -44,6 +44,5 @@ def main():
     print("Running preprocess")
 
 if __name__ == "__main__":
-    if __name__ == '__main__':
-        main()
+    main()
         
