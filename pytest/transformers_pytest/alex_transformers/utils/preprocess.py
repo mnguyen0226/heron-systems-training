@@ -186,13 +186,18 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         test_data=test_data,
     )
 
-    print(
-        f"First batch Train Iterator: {next(iter(train_iterator))}"
-    )  # this is the shape passed into the neural network
-    print(f"First batch Validate Iterator: {next(iter(valid_iterator))}")
-    print(f"First batch Test Iterator: {next(iter(test_iterator))}")
-
     # the shape is [batch_size, frequency = number of words, sequence = number of elements]
     # we only pass in the neural network [batch_size, frequency]
 
     return train_iterator, valid_iterator, test_iterator, SRC, TRG
+
+
+if __name__ == "__main__":
+
+    train_iterator, valid_iterator, test_iterator, SRC, TRG = run_preprocess()
+
+    print(f"Preprocess First batch Train Iterator: {next(iter(train_iterator))}")
+    print(f"Preprocess First batch Validate Iterator: {next(iter(valid_iterator))}")
+    print(f"Preprocess First batch Test Iterator: {next(iter(test_iterator))}")
+    print(f"Preprocess SRC {SRC}")
+    print(f"Preprocess TRG {TRG}")

@@ -125,7 +125,7 @@ class Encoder(nn.Module):  # this is basically the EncoderLayer() class
         self,
         in_shape: Tuple[
             int, int
-        ],  # [features, sequence] = [number of word, number of float represent that word]
+        ],  # [features, sequence] = [number of word in a sentence, number of float represent that word]
         nb_heads: int,
         do_scale: bool,
         dropout: float = 0.0,
