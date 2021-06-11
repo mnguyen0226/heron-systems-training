@@ -14,20 +14,8 @@ from decimal import Decimal
 from typing import Tuple
 import torch
 import torch.nn as nn
-from utils.preprocess import run_preprocess, device
 
-from utils.original_transformers.training_utils import (
-    origin_transformers_main,
-    test_origin_transformers_model,
-)
-from utils.original_transformers.encoder import Encoder
-from utils.original_transformers.decoder import Decoder
-from utils.original_transformers.seq2seq import Seq2Seq
-from utils.original_transformers.training_utils import (
-    initialize_weights,
-    origin_transformers_main,
-    test_origin_transformers_model,
-)
+from utils.preprocess import run_preprocess, device
 
 from utils.gated_transformers.gated_decoder import *
 from utils.gated_transformers.gated_encoder import *
@@ -52,7 +40,7 @@ def gated_model_train():
     # Initialize variables for Gated Transformers. This can be adjusted
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
-    HID_DIM = 256
+    HID_DIM = 256 # this is the features
     GATED_ENC_LAYERS = 3
     GATED_DEC_LAYERS = 3
     GATED_ENC_HEADS = 8
@@ -67,21 +55,37 @@ def gated_model_train():
     CLIP = 1
     LEARNING_RATE = 0.0005
 
-    # Initializes Encoder layers
+    # Initialize the Embedding layer
+    emb = Embedding(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
 
-    # Initializes Decoder layers
+    # Initializes Encoder layer
+    gated_encoder = Encoder(in_shape=[])
 
-    # Initializes other helps layers....
+    # Initializes Decoder layer
+    gated_decoder = 0
 
     # Convert tokenized string into integers
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
+    # Initializes the seq2seq model
+    model = Seq2Seq(
+        embedding=emb,
+        encoder=gated_encoder,
+        decoder=gated_decoder,
+        src_pad_idx=SRC_PAD_IDX,
+        trg_pad_idx=TRG_PAD_IDX,
+    )    
+
     # Initializes the model's weights
+    model.apply(initialize_weights)
 
     # Initializes Adam Optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
 
     # Initializes Cross Entropy Loss Function
+    criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
 
     # Variables for printing format
     gated_transformers_enc_layers = GATED_ENC_LAYERS
@@ -101,9 +105,34 @@ def gated_model_train():
     print("-----------------------------------------")
     print("Traininng Gated Transformers Training Set")
     print("-----------------------------------------")
+    (
+        gated_transformers_training_loss,
+        gated_transformers_validating_loss,
+        gated_transformers_training_PPL,
+        gated_transformers_validating_PPL,
+    ) = gated_transformers_main(
+        model=model,
+        train_iterator=train_iterator,
+        optimizer=optimizer,
+        criterion=criterion,
+        CLIP=CLIP,
+        valid_iterator=valid_iterator,
+        n_epochs=N_EPOCHS,
+    )
 
-    return
+    return (
+        gated_transformers_training_loss,
+        gated_transformers_validating_loss,
+        gated_transformers_training_PPL,
+        gated_transformers_validating_PPL,
+    )
 
 
-if __name__ == "__main__":
-    gated_model_train()
+# Run Training Loop:
+# Run training Gated Transformers
+(
+    gated_transformers_training_loss,
+    gated_transformers_validating_loss,
+    gated_transformers_training_PPL,
+    gated_transformers_validating_PPL,
+) = gated_model_train()

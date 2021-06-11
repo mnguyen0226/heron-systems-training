@@ -9,7 +9,7 @@ class Encoder(nn.Module):
     def __init__(
         self,
         input_dim: int,
-        hid_dim: int, # why does this important?
+        hid_dim: int,  # why does this important?
         n_layers: int,
         n_heads: int,
         pf_dim: int,
@@ -103,8 +103,8 @@ class Encoder(nn.Module):
         return src
 
 
-class LNorm(nn.Module): 
-    def __init__(self, normalized_shape: int): # normalized_shape = hidden_dim
+class LNorm(nn.Module):
+    def __init__(self, normalized_shape: int):  # normalized_shape = hidden_dim
         """Layer Normalization for both Encoder & Decoder
         This takes the same input as after the Embedding layer
 
@@ -114,9 +114,11 @@ class LNorm(nn.Module):
             input shape (hid_dim) of the Encoder and Decoder
         """
         super().__init__()
-        self.layer_norm = nn.LayerNorm(normalized_shape=normalized_shape) # initialized the input normalized layer
+        self.layer_norm = nn.LayerNorm(
+            normalized_shape=normalized_shape
+        )  # initialized the input normalized layer
 
-    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]: # use the layer
+    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:  # use the layer
         """Feed-forward function of the Layer Normalization function
 
         Parameters
@@ -138,7 +140,9 @@ class Gate(nn.Module):
             input hidden dimension (of the Encoder & Decoder)
         """
         super().__init__()
-        self.gru = nn.GRU(input_size=hid_dim, hidden_size=hid_dim) # two input layer for the GRU
+        self.gru = nn.GRU(
+            input_size=hid_dim, hidden_size=hid_dim
+        )  # two input layer for the GRU
 
     def forward(
         self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
@@ -153,7 +157,7 @@ class Gate(nn.Module):
         original_input.shape: [batch size, src len, hid dim]
             the input preprocessed text tokens
         """
-        b, f, s = original_input.shape # Split the input shape
+        b, f, s = original_input.shape  # Split the input shape
 
         # Permute the x and y so that the shape is now [B,S,F]
         original_input_permuted = original_input.permute(0, 2, 1)
@@ -376,7 +380,7 @@ class MultiHeadAttentionLayer(nn.Module):
         return x, attention
 
 
-class PositionwiseFeedforwardLayer(nn.Module): # I can specify the pf dim
+class PositionwiseFeedforwardLayer(nn.Module):  # I can specify the pf dim
     def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
         """Positionwise Feedforward layer of GatedEncoderLayer
         Why is this used? Unfortunately, it is never explained in the paper.
