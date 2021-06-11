@@ -1,3 +1,5 @@
+# Here is where we have to preprocess the data, get the right shape to Embedding, Encoder, Decoder as well as any additional layers for the output
+
 # We have to write extra function for to wrap
 
 # For Encoder

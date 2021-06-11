@@ -35,7 +35,7 @@ from utils.gated_transformers.gated_seq2seq import *
 from utils.gated_transformers.gated_training_utils import *
 
 ########################################################################
-# Gated Transformer Train
+# Gated Transformer Train: Here is where we define preprocessing, encoder, decoder
 def gated_model_train():
     """Runs preprocessing code, initializes parameters, generates models, optimizers, criterion,
     and run the trainining function
