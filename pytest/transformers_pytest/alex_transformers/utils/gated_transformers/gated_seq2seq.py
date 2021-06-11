@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Here is where we have to preprocess the data, get the right shape to Embedding, Encoder, Decoder as well as any additional layers for the output
 
 # We have to write extra function for to wrap
@@ -15,9 +14,6 @@
 # Tokenized and numerical Embedding layer
 
 # Dropout and scale will be used in the Seq2Seq class
-=======
-# Seq2Seq model that wrap the Embedding, Encoder, & Deceoder layer
->>>>>>> 18fa1019d824ae8374345a0c5775e70330f63066
 
 from typing import Tuple
 import torch
@@ -77,9 +73,7 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(
-            torch.ones((trg_len, trg_len), device=device)
-        ).bool()
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=device)).bool()
         # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
@@ -97,8 +91,10 @@ class Seq2Seq(nn.Module):
         print(f"TESTING: EMB Shape {emb_src.shape}")
 
         b, s, f = emb_src.shape
-        
-        emb_src_reshape = torch.reshape(emb_src.permute(0, 2, 1), (f, b*s)) # batch = batch. sequence = number of word in a sentence, features = number of float representing a word
+
+        emb_src_reshape = torch.reshape(
+            emb_src.permute(0, 2, 1), (f, b * s)
+        )  # batch = batch. sequence = number of word in a sentence, features = number of float representing a word
 
         print(f"TESTING: EMB RESHAPE Shape {emb_src_reshape.shape}\n")
         # use Encoder here

@@ -11,6 +11,7 @@ import torch.nn as nn
 from typing import Tuple
 import math
 
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -20,6 +21,7 @@ def initialize_weights(m):
     if hasattr(m, "weight") and m.weight.dim() > 1:
         nn.init.xavier_uniform_(m.weight.data)
         # Gradient clipping is used to tackle exploding gradients. If the gradient is too large, we rescale it to keep it smaller
+
 
 def train(
     model: Tuple[tuple, tuple, tuple, tuple, str],
