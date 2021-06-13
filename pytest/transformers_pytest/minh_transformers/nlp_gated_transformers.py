@@ -30,8 +30,8 @@ def gated_model_train():
     GATED_DEC_LAYERS = 3
     GATED_ENC_HEADS = 8
     GATED_DEC_HEADS = 8
-    ENC_PF_DIM = 512
-    DEC_PF_DIM = 512
+    ENC_PF_DIM = 256  # 512
+    DEC_PF_DIM = 256
     ENC_DROPOUT = 0.1
     DEC_DROPOUT = 0.1
 
@@ -47,22 +47,22 @@ def gated_model_train():
     emb = EmbeddingLayer(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
 
     enc = Encoder(
-        input_dim=INPUT_DIM,
-        hid_dim=HID_DIM,
+        # hid_dim=HID_DIM,
+        in_shape=[HID_DIM, 1],
         n_layers=GATED_ENC_LAYERS,
         n_heads=GATED_ENC_HEADS,
-        pf_dim=ENC_PF_DIM,
         dropout=ENC_DROPOUT,
     )
 
-    dec = Decoder(
-        output_dim=OUTPUT_DIM,
-        hid_dim=HID_DIM,
-        n_layers=GATED_DEC_LAYERS,
-        n_heads=GATED_DEC_HEADS,
-        pf_dim=DEC_PF_DIM,
-        dropout=DEC_DROPOUT,
-    )
+    dec = 0    
+    # dec = Decoder(
+    #     output_dim=OUTPUT_DIM,
+    #     hid_dim=HID_DIM,
+    #     n_layers=GATED_DEC_LAYERS,
+    #     n_heads=GATED_DEC_HEADS,
+    #     # pf_dim=DEC_PF_DIM,
+    #     dropout=DEC_DROPOUT,
+    # )
 
     model = Seq2Seq(
         embedding=emb,

@@ -142,7 +142,7 @@ class Seq2Seq(nn.Module):
         enc_src = self.encoder(embedding_src, src_mask)
         # enc_src = [batch size, src len, hid dim]
 
-        print("SEQ2SEQ: Finish Encoding \n")        
+        print("SEQ2SEQ: Finish Encoding \n")
 
         output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
 

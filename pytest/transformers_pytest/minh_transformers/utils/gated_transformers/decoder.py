@@ -18,9 +18,8 @@ class Decoder(nn.Module):
         hid_dim: int,
         n_layers: int,
         n_heads: int,
-        pf_dim: int,
+        # pf_dim: int,
         dropout: float,
-        max_length=100,
     ):
         """Decoder class for Gated Transformer which is similar to the Encoder but also has
             + mask multi-head attention layer over target sequence
@@ -37,28 +36,18 @@ class Decoder(nn.Module):
             number of DecoderLater layers
         n_heads: int
             number of heads for attention mechanism
-        pf_dim: int
-            output dimension for PFF layer
         dropout: float
             dropout rate = 0.1
-        max_length: int
-            the Output Embedding's position embedding has a vocab size of 100 which means our
-                model can accept sentences up to 100 tokens long
         """
         super().__init__()
         self.tok_embedding = nn.Embedding(
             num_embeddings=output_dim, embedding_dim=hid_dim
         )
-        self.pos_embedding = nn.Embedding(
-            num_embeddings=max_length, embedding_dim=hid_dim
-        )
+        self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
 
         # gated decoder layer
         self.layers = nn.ModuleList(
-            [
-                GatedDecoderLayer(hid_dim, n_heads, pf_dim, dropout)
-                for _ in range(n_layers)
-            ]
+            [GatedDecoderLayer(hid_dim, n_heads, dropout) for _ in range(n_layers)]
         )
 
         # linear layer of the output
@@ -121,7 +110,7 @@ class Decoder(nn.Module):
 
 
 class GatedDecoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float):
+    def __init__(self, hid_dim: int, n_heads: int, dropout: float):
         """Gated Decoder Layer for the Decoder
 
         Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer.
@@ -143,8 +132,6 @@ class GatedDecoderLayer(nn.Module):
             input hidden_dim from the processed positioned-encoded & embedded vectorized input text
         n_heads: int
             number of head(s) for attention mechanism
-        pf_dim: int
-            input feed-forward dimension
         dropout: float
             dropout rate = 0.1
         """
@@ -158,9 +145,7 @@ class GatedDecoderLayer(nn.Module):
         self.second_gate = Gate(hid_dim=hid_dim)
 
         self.third_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = Projection(
-            hid_dim, pf_dim, dropout
-        )
+        self.positionwise_feedforward = Projection(hid_dim, dropout)
         self.third_gate = Gate(hid_dim=hid_dim)
 
         self.dropout = nn.Dropout(dropout)

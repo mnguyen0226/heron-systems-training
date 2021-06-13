@@ -5,17 +5,9 @@ import torch
 import torch.nn as nn
 from utils.preprocess import device
 
-
 class Encoder(nn.Module):
     def __init__(
-        self,
-        input_dim: int,
-        hid_dim: int,  # why does this important?
-        n_layers: int,
-        n_heads: int,
-        pf_dim: int,
-        dropout: float,
-        max_length=100,
+        self, in_shape: Tuple[int, int], n_layers: int, n_heads: int, dropout: float,
     ):
         """Encoder class for Gated Transformer which is used for
             + embedding preprocessed input texts
@@ -24,26 +16,16 @@ class Encoder(nn.Module):
 
         Parameters
         ----------
-        input_dim: int
-            input dimension of the tokenized text to Input Embedding layer
         hid_dim: int
             dimension of the output of Input Embedding layer and input to EncoderLayer layer
         n_layers: int
             number of layer(s) of the EncoderLayer
-        pf_dim: int
-            dimension of the output from the Feedforward layer
         dropout: float
             dropout rate = 0.1
-        max_length: int
-            the Input Embedding's position embedding has a vocab size of 100 which means our model can
-                accept sentences up to 100 tokens long
         """
         super().__init__()
         self.layers = nn.ModuleList(
-            [
-                GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout)
-                for _ in range(n_layers)
-            ]
+            [GatedEncoderLayer(in_shape=in_shape, n_heads=n_heads, dropout=dropout) for _ in range(n_layers)]
         )
 
     def forward(
@@ -72,7 +54,10 @@ class Encoder(nn.Module):
 
 class GatedEncoderLayer(nn.Module):
     def __init__(
-        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float,
+        self,
+        in_shape: Tuple[int, int],  # hid_dim, 1, F,S (but we will never use sequence)
+        n_heads: int,
+        dropout: float = 0.0,
     ):
         """Gated Encoder layer of Encoder of the Transformer
 
@@ -82,21 +67,17 @@ class GatedEncoderLayer(nn.Module):
             input hidden_dim from the processed positioned-encoded & embedded vectorized input text
         n_heads: int
             number of head(s) for attention mechanism
-        pf_dim: int
-            input feed-forward dimension
         dropout: float
             dropout rate = 0.1
         """
         super().__init__()
-        self.first_norm = LNorm(normalized_shape=hid_dim)
-        self.attn_layer = Attn(hid_dim, n_heads, dropout)
-        self.first_gate = Gate(hid_dim=hid_dim)
+        self.first_norm = LNorm(in_shape=in_shape)
+        self.attn_layer = Attn(in_shape, n_heads, dropout)
+        self.first_gate = Gate(in_shape=in_shape)
 
-        self.second_norm = LNorm(normalized_shape=hid_dim)
-        self.projection = Projection(
-            hid_dim, pf_dim, dropout
-        )
-        self.second_gate = Gate(hid_dim=hid_dim)
+        self.second_norm = LNorm(in_shape=in_shape)
+        self.projection = Projection(in_shape, dropout)
+        self.second_gate = Gate(in_shape=in_shape)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -107,7 +88,7 @@ class GatedEncoderLayer(nn.Module):
 
         Parameters
         ----------
-        src: [batch size, src len, hid dim]
+        src: [batch size, src len, hid dim] B,S,F
             tokenized vector input text
         src_mask: [batch_size, 1, 1, src_len]
             masked the input text but allow to ignore <pad> after tokenized during training in the
@@ -118,46 +99,32 @@ class GatedEncoderLayer(nn.Module):
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """
-        # print(f"TESTING: Shape before into the 1st layer norm: {src.shape}")
-
         # first layer norm - already dropped out from Encoder class
         src = self.first_norm(src)
 
-        # print(f"TESTING: Shape before into the self attention layer: {src.shape}")
-
         # self-attention
         _src, _ = self.attn_layer(query=src, key=src, value=src, mask=src_mask)
-
-        # print(f"TESTING: Shape before into the 1st gated output: {_src.shape}")
 
         first_gate_output, _ = self.first_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
 
-        # print(f"TESTING: Shape before into the 2nd layer norm: { first_gate_output.shape}")
-
         # second layer norm - already dropped from first gate
         src = self.second_norm(first_gate_output)
 
-        # print(f"TESTING: Shape before into the feed forward {src.shape}")
-
         # positionwise feedforward
         _src = self.projection(src)
-
-        # print(f"TESTING: Shape before into the 2nd gated output: {_src.shape}")
 
         # second gate
         second_gate_output, _ = self.second_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
 
-        # print(f"TESTING: Shape before into the decoder {second_gate_output.shape}")
-
         return second_gate_output
 
 
 class LNorm(nn.Module):
-    def __init__(self, normalized_shape: int):  # normalized_shape = hidden_dim
+    def __init__(self, in_shape: Tuple[int, int]):  # = [hidden_dim, 1]
         """Layer Normalization for both Encoder & Decoder
         This takes the same input as after the Embedding layer
 
@@ -168,15 +135,15 @@ class LNorm(nn.Module):
         """
         super().__init__()
         self.layer_norm = nn.LayerNorm(
-            normalized_shape=normalized_shape
-        )  # initialized the input normalized layer
+            normalized_shape=in_shape[0]
+        )
 
     def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:  # use the layer
         """Feed-forward function of the Layer Normalization function
 
         Parameters
         ----------
-        x: [batch size, src len, hid dim]
+        x: [batch size, src len, hid dim] # batch, sequence, frequency
             input dimension (hid_dim) of the Layer Normalization of the Encoder & Decoder
         """
         x = self.layer_norm(x)
@@ -184,7 +151,13 @@ class LNorm(nn.Module):
 
 
 class Attn(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, dropout: float):
+    def __init__(
+        self,
+        # hid_dim: int,
+        in_shape: Tuple[int, int],
+        n_heads: int,
+        dropout: float = 0.0,
+    ):
         """Multi/single Head Attention Layer. This layer define Q,K,V of the GateEncoderLayer
 
         Parameters
@@ -198,31 +171,34 @@ class Attn(nn.Module):
         """
         super().__init__()
 
+        nb_features, _ = in_shape
+
         assert (
-            hid_dim % n_heads == 0
+            nb_features % n_heads == 0
         )  # make sure that number of multiheads are concatenatable
 
-        self.hid_dim = hid_dim
-        self.n_heads = n_heads
-        self.head_dim = hid_dim // n_heads  # determine the head_dim
+        self.hid_dim, _ = in_shape
 
-        self.fc_q = nn.Linear(
-            in_features=hid_dim, out_features=hid_dim
+        self._h = n_heads
+        self.head_dim = nb_features // n_heads  # determine the head_dim
+
+        self.mq = nn.Linear(
+            in_features=nb_features, out_features=nb_features, bias=False
+        )
+        self.mk = nn.Linear(
+            in_features=nb_features, out_features=nb_features, bias=False
         )  # apply linear transformation
-        self.fc_k = nn.Linear(
-            in_features=hid_dim, out_features=hid_dim
-        )  # apply linear transformation
-        self.fc_v = nn.Linear(
-            in_features=hid_dim, out_features=hid_dim
+        self.mv = nn.Linear(
+            in_features=nb_features, out_features=nb_features, bias=False
         )  # apply linear transformation
 
-        self.fc_o = nn.Linear(
-            in_features=hid_dim, out_features=hid_dim
+        self.mZ = nn.Linear(
+            in_features=nb_features, out_features=nb_features, bias=False
         )  # apply linear transformation
 
         self.dropout = nn.Dropout(dropout)
         self.scale = (
-            hid_dim ** 0.5
+            nb_features ** 0.5
         )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
@@ -252,24 +228,24 @@ class Attn(nn.Module):
         """
         batch_size = query.shape[0]
 
-        Q = self.fc_q(
+        Q = self.mq(
             query
         )  # applied linear transformation but keep dim, Q = [batch size, query len, hid dim]
-        K = self.fc_k(
+        K = self.mk(
             key
         )  # applied linear transformation but keep dim, K = [batch size, key len, hid dim]
-        V = self.fc_v(
+        V = self.mv(
             value
         )  # applied linear transformation but keep dim, V = [batch size, value len, hid dim]
 
         # Change the shape of QKV
-        Q = Q.view(batch_size, -1, self.n_heads, self.head_dim).permute(
+        Q = Q.view(batch_size, -1, self._h, self.head_dim).permute(
             0, 2, 1, 3
         )  # Q = [batch size, n heads, query len, head dim]
-        K = K.view(batch_size, -1, self.n_heads, self.head_dim).permute(
+        K = K.view(batch_size, -1, self._h, self.head_dim).permute(
             0, 2, 1, 3
         )  # K = [batch size, n heads, key len, head dim]
-        V = V.view(batch_size, -1, self.n_heads, self.head_dim).permute(
+        V = V.view(batch_size, -1, self._h, self.head_dim).permute(
             0, 2, 1, 3
         )  # V = [batch size, n heads, value len, head dim]
 
@@ -294,13 +270,13 @@ class Attn(nn.Module):
         x = x.view(batch_size, -1, self.hid_dim)  # combine the heads together
 
         # x = [batch size, query len, hid dim]
-        x = self.fc_o(x)  # Linear layer output for attention
+        x = self.mZ(x)  # Linear layer output for attention
 
         return x, attention
 
 
 class Gate(nn.Module):
-    def __init__(self, hid_dim: int):
+    def __init__(self, in_shape: Tuple[int, int]):  # F, S = hid_dim,
         """Gate Layer for both the Encoder & Decoder
 
         Parameters
@@ -310,8 +286,8 @@ class Gate(nn.Module):
         """
         super().__init__()
         self.gru = nn.GRU(
-            input_size=hid_dim, hidden_size=hid_dim
-        )  # two input layer for the GRU
+            input_size=in_shape[0], hidden_size=in_shape[0]
+        ) 
 
     def forward(
         self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
@@ -344,7 +320,8 @@ class Gate(nn.Module):
 
 
 class Projection(nn.Module):  # I can specify the pf dim
-    def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
+    # def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
+    def __init__(self, in_shape: Tuple[int, int], dropout: float):
         """Positionwise Feedforward layer of GatedEncoderLayer
         Why is this used? Unfortunately, it is never explained in the paper.
         The transformed from hid_dim to pf_dim (pf_dim >> hid_dim.
@@ -355,17 +332,15 @@ class Projection(nn.Module):  # I can specify the pf dim
         ----------
         hid_dim: int
             input hidden dimension from the second layer norm
-        pf_dim: int
-            dimension of the output for the position-wise feedforward layer
         dropout: Float
             dropout rate = 0.1
         """
         super().__init__()
         self.fc_1 = nn.Linear(
-            in_features=hid_dim, out_features=pf_dim
+            in_features=in_shape[0], out_features=in_shape[0], bias=False
         )  # linear transformation
         self.fc_2 = nn.Linear(
-            in_features=pf_dim, out_features=hid_dim
+            in_features=in_shape[0], out_features=in_shape[0], bias=False
         )  # linear transformation # make sure to conert back from pf_dim to hid_dim
         self.dropout = nn.Dropout(dropout)
 
