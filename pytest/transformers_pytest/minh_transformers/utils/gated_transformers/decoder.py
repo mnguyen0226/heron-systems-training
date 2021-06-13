@@ -5,9 +5,9 @@ import torch
 import torch.nn as nn
 from utils.preprocess import device
 
-from utils.gated_transformers.encoder import MultiHeadAttentionLayer
+from utils.gated_transformers.encoder import Attn
 from utils.gated_transformers.encoder import LNorm
-from utils.gated_transformers.encoder import PositionwiseFeedforwardLayer
+from utils.gated_transformers.encoder import Projection
 from utils.gated_transformers.encoder import Gate
 
 
@@ -102,9 +102,7 @@ class Decoder(nn.Module):
         trg_len = trg.shape[1]
 
         # pos = [batch size, trg len]
-        pos = (
-            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
-        )
+        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
         # trg = [batch size, trg len, hid dim]
         trg = self.dropout(
@@ -123,8 +121,7 @@ class Decoder(nn.Module):
 
 
 class GatedDecoderLayer(nn.Module):
-    def __init__(
-        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float):
+    def __init__(self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float):
         """Gated Decoder Layer for the Decoder
 
         Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer.
@@ -153,17 +150,15 @@ class GatedDecoderLayer(nn.Module):
         """
         super().__init__()
         self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout)
+        self.self_attention = Attn(hid_dim, n_heads, dropout)
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.encoder_attention = MultiHeadAttentionLayer(
-            hid_dim, n_heads, dropout
-        )
+        self.encoder_attention = Attn(hid_dim, n_heads, dropout)
         self.second_gate = Gate(hid_dim=hid_dim)
 
         self.third_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+        self.positionwise_feedforward = Projection(
             hid_dim, pf_dim, dropout
         )
         self.third_gate = Gate(hid_dim=hid_dim)

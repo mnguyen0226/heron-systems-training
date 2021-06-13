@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from utils.preprocess import device
 
+
 class EmbeddingLayer(nn.Module):
     def __init__(self, input_dim, hid_dim, dropout):
         super().__init__()
@@ -20,9 +21,7 @@ class EmbeddingLayer(nn.Module):
         src_len = src.shape[1]
 
         # positional vector
-        pos = (
-            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(device)
-        )
+        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
         src = self.dropout(
             (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
@@ -104,9 +103,7 @@ class Seq2Seq(nn.Module):
 
         trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(
-            torch.ones((trg_len, trg_len), device=device)
-        ).bool()
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=device)).bool()
         # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask

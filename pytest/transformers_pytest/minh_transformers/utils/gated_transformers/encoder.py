@@ -70,77 +70,6 @@ class Encoder(nn.Module):
         return src
 
 
-class LNorm(nn.Module):
-    def __init__(self, normalized_shape: int):  # normalized_shape = hidden_dim
-        """Layer Normalization for both Encoder & Decoder
-        This takes the same input as after the Embedding layer
-
-        Parameters
-        ----------
-        normalized_shape: int
-            input shape (hid_dim) of the Encoder and Decoder
-        """
-        super().__init__()
-        self.layer_norm = nn.LayerNorm(
-            normalized_shape=normalized_shape
-        )  # initialized the input normalized layer
-
-    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:  # use the layer
-        """Feed-forward function of the Layer Normalization function
-
-        Parameters
-        ----------
-        x: [batch size, src len, hid dim]
-            input dimension (hid_dim) of the Layer Normalization of the Encoder & Decoder
-        """
-        x = self.layer_norm(x)
-        return x
-
-
-class Gate(nn.Module):
-    def __init__(self, hid_dim: int):
-        """Gate Layer for both the Encoder & Decoder
-
-        Parameters
-        ----------
-        hid_dim: int
-            input hidden dimension (of the Encoder & Decoder)
-        """
-        super().__init__()
-        self.gru = nn.GRU(
-            input_size=hid_dim, hidden_size=hid_dim
-        )  # two input layer for the GRU
-
-    def forward(
-        self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
-    ) -> Tuple[int, int, int]:
-        """Feed-forward function of the Gate Layer
-
-        Parameters
-        ----------
-        output: [batch size, src len, hid dim]
-            the output from either Attention Layer or Positionwise Layer
-
-        original_input.shape: [batch size, src len, hid dim]
-            the input preprocessed text tokens
-        """
-        b, f, s = original_input.shape  # Split the input shape
-
-        # Permute the x and y so that the shape is now [B,S,F]
-        original_input_permuted = original_input.permute(0, 2, 1)
-        output_permuted = output.permute(0, 2, 1)
-
-        # We really just need the GRU to weight between the input and the self attention. So we
-        # resize to be [B * S, 1, F] so that we essentially have a massive batch of samples with
-        # sequence length 1 and F features
-        gate_output, hidden = self.gru(
-            torch.reshape(output_permuted, (1, b * f, s)),
-            torch.reshape(original_input_permuted, (1, b * f, s)).contiguous(),
-        )
-
-        return gate_output.view(b, s, f).permute(0, 2, 1), hidden
-
-
 class GatedEncoderLayer(nn.Module):
     def __init__(
         self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float,
@@ -160,11 +89,11 @@ class GatedEncoderLayer(nn.Module):
         """
         super().__init__()
         self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout)
+        self.self_attention = Attn(hid_dim, n_heads, dropout)
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(
+        self.positionwise_feedforward = Projection(
             hid_dim, pf_dim, dropout
         )
         self.second_gate = Gate(hid_dim=hid_dim)
@@ -227,7 +156,34 @@ class GatedEncoderLayer(nn.Module):
         return second_gate_output
 
 
-class MultiHeadAttentionLayer(nn.Module):
+class LNorm(nn.Module):
+    def __init__(self, normalized_shape: int):  # normalized_shape = hidden_dim
+        """Layer Normalization for both Encoder & Decoder
+        This takes the same input as after the Embedding layer
+
+        Parameters
+        ----------
+        normalized_shape: int
+            input shape (hid_dim) of the Encoder and Decoder
+        """
+        super().__init__()
+        self.layer_norm = nn.LayerNorm(
+            normalized_shape=normalized_shape
+        )  # initialized the input normalized layer
+
+    def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:  # use the layer
+        """Feed-forward function of the Layer Normalization function
+
+        Parameters
+        ----------
+        x: [batch size, src len, hid dim]
+            input dimension (hid_dim) of the Layer Normalization of the Encoder & Decoder
+        """
+        x = self.layer_norm(x)
+        return x
+
+
+class Attn(nn.Module):
     def __init__(self, hid_dim: int, n_heads: int, dropout: float):
         """Multi/single Head Attention Layer. This layer define Q,K,V of the GateEncoderLayer
 
@@ -267,7 +223,7 @@ class MultiHeadAttentionLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.scale = (
             hid_dim ** 0.5
-        ) # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
@@ -343,7 +299,51 @@ class MultiHeadAttentionLayer(nn.Module):
         return x, attention
 
 
-class PositionwiseFeedforwardLayer(nn.Module):  # I can specify the pf dim
+class Gate(nn.Module):
+    def __init__(self, hid_dim: int):
+        """Gate Layer for both the Encoder & Decoder
+
+        Parameters
+        ----------
+        hid_dim: int
+            input hidden dimension (of the Encoder & Decoder)
+        """
+        super().__init__()
+        self.gru = nn.GRU(
+            input_size=hid_dim, hidden_size=hid_dim
+        )  # two input layer for the GRU
+
+    def forward(
+        self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]
+    ) -> Tuple[int, int, int]:
+        """Feed-forward function of the Gate Layer
+
+        Parameters
+        ----------
+        output: [batch size, src len, hid dim]
+            the output from either Attention Layer or Positionwise Layer
+
+        original_input.shape: [batch size, src len, hid dim]
+            the input preprocessed text tokens
+        """
+        b, f, s = original_input.shape  # Split the input shape
+
+        # Permute the x and y so that the shape is now [B,S,F]
+        original_input_permuted = original_input.permute(0, 2, 1)
+        output_permuted = output.permute(0, 2, 1)
+
+        # We really just need the GRU to weight between the input and the self attention. So we
+        # resize to be [B * S, 1, F] so that we essentially have a massive batch of samples with
+        # sequence length 1 and F features
+        gate_output, hidden = self.gru(
+            torch.reshape(output_permuted, (1, b * f, s)),
+            torch.reshape(original_input_permuted, (1, b * f, s)).contiguous(),
+        )
+
+        return gate_output.view(b, s, f).permute(0, 2, 1), hidden
+
+
+class Projection(nn.Module):  # I can specify the pf dim
     def __init__(self, hid_dim: int, pf_dim: int, dropout: float):
         """Positionwise Feedforward layer of GatedEncoderLayer
         Why is this used? Unfortunately, it is never explained in the paper.

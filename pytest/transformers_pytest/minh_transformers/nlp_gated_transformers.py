@@ -44,9 +44,7 @@ def gated_model_train():
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-    emb = EmbeddingLayer(
-        input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
-    )
+    emb = EmbeddingLayer(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
 
     enc = Encoder(
         input_dim=INPUT_DIM,
