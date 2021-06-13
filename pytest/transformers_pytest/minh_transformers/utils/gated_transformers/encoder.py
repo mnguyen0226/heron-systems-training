@@ -88,12 +88,12 @@ class GatedEncoderLayer(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = Attn(hid_dim, n_heads, dropout)
+        self.first_norm = LNorm(normalized_shape=hid_dim)
+        self.attn_layer = Attn(hid_dim, n_heads, dropout)
         self.first_gate = Gate(hid_dim=hid_dim)
 
-        self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = Projection(
+        self.second_norm = LNorm(normalized_shape=hid_dim)
+        self.projection = Projection(
             hid_dim, pf_dim, dropout
         )
         self.second_gate = Gate(hid_dim=hid_dim)
@@ -121,12 +121,12 @@ class GatedEncoderLayer(nn.Module):
         # print(f"TESTING: Shape before into the 1st layer norm: {src.shape}")
 
         # first layer norm - already dropped out from Encoder class
-        src = self.first_layer_norm(src)
+        src = self.first_norm(src)
 
         # print(f"TESTING: Shape before into the self attention layer: {src.shape}")
 
         # self-attention
-        _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask)
+        _src, _ = self.attn_layer(query=src, key=src, value=src, mask=src_mask)
 
         # print(f"TESTING: Shape before into the 1st gated output: {_src.shape}")
 
@@ -137,12 +137,12 @@ class GatedEncoderLayer(nn.Module):
         # print(f"TESTING: Shape before into the 2nd layer norm: { first_gate_output.shape}")
 
         # second layer norm - already dropped from first gate
-        src = self.second_layer_norm(first_gate_output)
+        src = self.second_norm(first_gate_output)
 
         # print(f"TESTING: Shape before into the feed forward {src.shape}")
 
         # positionwise feedforward
-        _src = self.positionwise_feedforward(src)
+        _src = self.projection(src)
 
         # print(f"TESTING: Shape before into the 2nd gated output: {_src.shape}")
 
