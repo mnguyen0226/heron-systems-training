@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from utils.preprocess import device
 
+
 class Encoder(nn.Module):
     def __init__(
         self, in_shape: Tuple[int, int], n_layers: int, n_heads: int, dropout: float,
@@ -25,7 +26,10 @@ class Encoder(nn.Module):
         """
         super().__init__()
         self.layers = nn.ModuleList(
-            [GatedEncoderLayer(in_shape=in_shape, n_heads=n_heads, dropout=dropout) for _ in range(n_layers)]
+            [
+                GatedEncoderLayer(in_shape=in_shape, n_heads=n_heads, dropout=dropout)
+                for _ in range(n_layers)
+            ]
         )
 
     def forward(
@@ -134,9 +138,7 @@ class LNorm(nn.Module):
             input shape (hid_dim) of the Encoder and Decoder
         """
         super().__init__()
-        self.layer_norm = nn.LayerNorm(
-            normalized_shape=in_shape[0]
-        )
+        self.layer_norm = nn.LayerNorm(normalized_shape=in_shape[0])
 
     def forward(self, x: Tuple[int, int, int]) -> Tuple[int, int, int]:  # use the layer
         """Feed-forward function of the Layer Normalization function
@@ -285,9 +287,7 @@ class Gate(nn.Module):
             input hidden dimension (of the Encoder & Decoder)
         """
         super().__init__()
-        self.gru = nn.GRU(
-            input_size=in_shape[0], hidden_size=in_shape[0]
-        ) 
+        self.gru = nn.GRU(input_size=in_shape[0], hidden_size=in_shape[0])
 
     def forward(
         self, output: Tuple[int, int, int], original_input: Tuple[int, int, int]

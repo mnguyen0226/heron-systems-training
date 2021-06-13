@@ -15,10 +15,9 @@ class Decoder(nn.Module):
     def __init__(
         self,
         output_dim: int,
-        hid_dim: int,
+        encoder_output_shape: Tuple[int, int],
         n_layers: int,
         n_heads: int,
-        # pf_dim: int,
         dropout: float,
     ):
         """Decoder class for Gated Transformer which is similar to the Encoder but also has
@@ -40,24 +39,33 @@ class Decoder(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.tok_embedding = nn.Embedding(
-            num_embeddings=output_dim, embedding_dim=hid_dim
-        )
-        self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
+        # self.tok_embedding = nn.Embedding(
+        #     num_embeddings=output_dim, embedding_dim=hid_dim
+        # )
+        # self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
 
         # gated decoder layer
         self.layers = nn.ModuleList(
-            [GatedDecoderLayer(hid_dim, n_heads, dropout) for _ in range(n_layers)]
+            [
+                GatedDecoderLayer(
+                    encoder_output_shape=encoder_output_shape,
+                    n_heads=n_heads,
+                    dropout=dropout,
+                )
+                for _ in range(n_layers)
+            ]
         )
 
         # linear layer of the output
-        self.fc_out = nn.Linear(in_features=hid_dim, out_features=output_dim)
+        self.fc_out = nn.Linear(
+            in_features=encoder_output_shape[0], out_features=output_dim
+        )
 
-        self.dropout = nn.Dropout(dropout)
+        # self.dropout = nn.Dropout(dropout)
 
-        self.scale = (
-            hid_dim ** 0.5
-        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        # self.scale = (
+        #     hid_dim ** 0.5
+        # )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
@@ -87,16 +95,16 @@ class Decoder(nn.Module):
         attention: [batch size, n heads, trg len, src len]
             we will not use this
         """
-        batch_size = trg.shape[0]
-        trg_len = trg.shape[1]
+        # batch_size = trg.shape[0]
+        # trg_len = trg.shape[1]
 
-        # pos = [batch size, trg len]
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
+        # # pos = [batch size, trg len]
+        # pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
-        # trg = [batch size, trg len, hid dim]
-        trg = self.dropout(
-            (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
-        )
+        # # trg = [batch size, trg len, hid dim]
+        # trg = self.dropout(
+        #     (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
+        # )
 
         for layer in self.layers:
             # trg = [batch size, trg len, hid dim]
@@ -110,7 +118,9 @@ class Decoder(nn.Module):
 
 
 class GatedDecoderLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, dropout: float):
+    def __init__(
+        self, encoder_output_shape: Tuple[int, int], n_heads: int, dropout: float
+    ):
         """Gated Decoder Layer for the Decoder
 
         Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer.
@@ -136,17 +146,17 @@ class GatedDecoderLayer(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = Attn(hid_dim, n_heads, dropout)
-        self.first_gate = Gate(hid_dim=hid_dim)
+        self.first_layer_norm = LNorm(in_shape=encoder_output_shape)
+        self.self_attention = Attn(encoder_output_shape, n_heads, dropout)
+        self.first_gate = Gate(in_shape=encoder_output_shape)
 
-        self.second_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.encoder_attention = Attn(hid_dim, n_heads, dropout)
-        self.second_gate = Gate(hid_dim=hid_dim)
+        self.second_layer_norm = LNorm(in_shape=encoder_output_shape)
+        self.encoder_attention = Attn(encoder_output_shape, n_heads, dropout)
+        self.second_gate = Gate(in_shape=encoder_output_shape)
 
-        self.third_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.positionwise_feedforward = Projection(hid_dim, dropout)
-        self.third_gate = Gate(hid_dim=hid_dim)
+        self.third_layer_norm = LNorm(in_shape=encoder_output_shape)
+        self.positionwise_feedforward = Projection(encoder_output_shape, dropout)
+        self.third_gate = Gate(in_shape=encoder_output_shape)
 
         self.dropout = nn.Dropout(dropout)
 

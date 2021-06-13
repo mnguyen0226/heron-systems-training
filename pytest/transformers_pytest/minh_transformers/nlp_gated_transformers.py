@@ -14,7 +14,7 @@ from utils.gated_transformers.training_utils import (  # training, testing loop
 )
 from utils.gated_transformers.encoder import Encoder  # encoder
 from utils.gated_transformers.decoder import Decoder  # decoder
-from utils.gated_transformers.seq2seq import Seq2Seq, EmbeddingLayer  # seqseq
+from utils.gated_transformers.seq2seq import Seq2Seq, EmbeddingEncLayer, EmbeddingDecLayer  # seqseq
 
 
 def gated_model_train():
@@ -44,28 +44,27 @@ def gated_model_train():
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-    emb = EmbeddingLayer(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
+    emb_enc = EmbeddingEncLayer(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
+    emb_dec = EmbeddingDecLayer(output_dim=OUTPUT_DIM, hid_dim=HID_DIM, dropout=DEC_DROPOUT)
 
     enc = Encoder(
-        # hid_dim=HID_DIM,
         in_shape=[HID_DIM, 1],
         n_layers=GATED_ENC_LAYERS,
         n_heads=GATED_ENC_HEADS,
         dropout=ENC_DROPOUT,
     )
 
-    dec = 0    
-    # dec = Decoder(
-    #     output_dim=OUTPUT_DIM,
-    #     hid_dim=HID_DIM,
-    #     n_layers=GATED_DEC_LAYERS,
-    #     n_heads=GATED_DEC_HEADS,
-    #     # pf_dim=DEC_PF_DIM,
-    #     dropout=DEC_DROPOUT,
-    # )
+    dec = Decoder(
+        output_dim=OUTPUT_DIM,
+        encoder_output_shape=[HID_DIM, 1],
+        n_layers=GATED_DEC_LAYERS,
+        n_heads=GATED_DEC_HEADS,
+        dropout=DEC_DROPOUT,
+    )
 
     model = Seq2Seq(
-        embedding=emb,
+        embedding_enc=emb_enc,
+        embedding_dec=emb_dec,
         encoder=enc,
         decoder=dec,
         src_pad_idx=SRC_PAD_IDX,
