@@ -224,40 +224,40 @@ class GatedEncoderLayer(nn.Module):
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """
-        print(f"TESTING: Shape before into the 1st layer norm: {src.shape}")
+        # print(f"TESTING: Shape before into the 1st layer norm: {src.shape}")
 
         # first layer norm - already dropped out from Encoder class
         src = self.first_layer_norm(src)
 
-        print(f"TESTING: Shape before into the self attention layer: {src.shape}")
+        # print(f"TESTING: Shape before into the self attention layer: {src.shape}")
 
         # self-attention
         _src, _ = self.self_attention(query=src, key=src, value=src, mask=src_mask)
 
-        print(f"TESTING: Shape before into the 1st gated output: {_src.shape}")
+        # print(f"TESTING: Shape before into the 1st gated output: {_src.shape}")
 
         first_gate_output, _ = self.first_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
 
-        print(f"TESTING: Shape before into the 2nd layer norm: { first_gate_output.shape}")
+        # print(f"TESTING: Shape before into the 2nd layer norm: { first_gate_output.shape}")
 
         # second layer norm - already dropped from first gate
         src = self.second_layer_norm(first_gate_output)
 
-        print(f"TESTING: Shape before into the feed forward {src.shape}")
+        # print(f"TESTING: Shape before into the feed forward {src.shape}")
 
         # positionwise feedforward
         _src = self.positionwise_feedforward(src)
 
-        print(f"TESTING: Shape before into the 2nd gated output: {_src.shape}")
+        # print(f"TESTING: Shape before into the 2nd gated output: {_src.shape}")
 
         # second gate
         second_gate_output, _ = self.second_gate(
             self.dropout(_src), src
         )  # [batch size, src len, hid dim]
 
-        print(f"TESTING: Shape before into the decoder {second_gate_output.shape}")
+        # print(f"TESTING: Shape before into the decoder {second_gate_output.shape}")
 
         return second_gate_output
 

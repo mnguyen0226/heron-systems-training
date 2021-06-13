@@ -22,6 +22,8 @@ from utils.preprocess import device
 
 
 class Embedding(nn.Module):
+    # this just encode the batch size, features
+
     def __init__(
         self, input_dim: int, hid_dim: int, dropout: float
     ):  # these two are features
@@ -34,7 +36,7 @@ class Embedding(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.scale = hid_dim ** 0.5
 
-    def forward(self, src):
+    def forward(self, src):  # return the embedding source before the encoder layer
         batch_size = src.shape[0]
         src_len = src.shape[1]
 
@@ -42,11 +44,11 @@ class Embedding(nn.Module):
         pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
         # src = [batch_size, src_len, hid_dim].
-        src = self.dropout(
+        emb_src = self.dropout(
             (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
         )
 
-        return src
+        return emb_src
 
 
 class Seq2Seq(nn.Module):
@@ -85,16 +87,21 @@ class Seq2Seq(nn.Module):
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)
 
-        print(f"TESTING: SRC Shape {src.shape}")
-        emb_src = self.embedding(src)
+        emb_src = self.embedding(src)  # src = [batch_size, src_len],
 
-        print(f"TESTING: EMB Shape {emb_src.shape}")
+        # emb_src = [batch_size, sequence, features] = [batch, # word in a sentence, features = number of float]
+        print("TESTING Seq2Seq forward function")
+        print(src.shape)
+        print(emb_src.shape)
 
-        b, s, f = emb_src.shape
+        emb_src = emb_src.permute(0, 2, 1)
+        print(
+            emb_src.shape
+        )  # we want the shape to be similar to the one in the Encoder's forward function
 
-        emb_src_reshape = torch.reshape(
-            emb_src.permute(0, 2, 1), (f, b * s)
-        )  # batch = batch. sequence = number of word in a sentence, features = number of float representing a word
+        # this will be changed. Some how could encode the src_mask and the trg_mask
+        enc_src = self.encoder(emb_src, src_mask)
 
-        print(f"TESTING: EMB RESHAPE Shape {emb_src_reshape.shape}\n")
-        # use Encoder here
+        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+
+        return output, attention

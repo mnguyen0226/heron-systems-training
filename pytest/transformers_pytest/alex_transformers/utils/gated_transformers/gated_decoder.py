@@ -2,9 +2,10 @@ from collections import OrderedDict
 from typing import Tuple
 
 import torch
-from adept.network import SubModule2D
-from adept.utils.util import DotDict
-from torch import nn
+
+# from adept.network import SubModule2D
+# from adept.utils.util import DotDict
+import torch.nn as nn
 
 # from gamebreaker.classifier.network.gated_encoder import Attn
 # from gamebreaker.classifier.network.gated_encoder import Encoder

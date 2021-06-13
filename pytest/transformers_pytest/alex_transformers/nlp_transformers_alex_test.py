@@ -40,7 +40,7 @@ def gated_model_train():
     # Initialize variables for Gated Transformers. This can be adjusted
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
-    HID_DIM = 256 # this is the features
+    HID_DIM = 256  # this is the features
     GATED_ENC_LAYERS = 3
     GATED_DEC_LAYERS = 3
     GATED_ENC_HEADS = 8
@@ -55,11 +55,18 @@ def gated_model_train():
     CLIP = 1
     LEARNING_RATE = 0.0005
 
-    # Initialize the Embedding layer
-    emb = Embedding(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
+    # Initializes the Embedding layer
+    gated_embedding = Embedding(
+        input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
+    )
 
     # Initializes Encoder layer
-    gated_encoder = Encoder(in_shape=[])
+    gated_encoder = Encoder(
+        in_shape=[HID_DIM, 1],
+        nb_heads=GATED_ENC_HEADS,
+        do_scale=True,
+        dropout=ENC_DROPOUT,
+    )
 
     # Initializes Decoder layer
     gated_decoder = 0
@@ -70,19 +77,18 @@ def gated_model_train():
 
     # Initializes the seq2seq model
     model = Seq2Seq(
-        embedding=emb,
+        embedding=gated_embedding,
         encoder=gated_encoder,
         decoder=gated_decoder,
         src_pad_idx=SRC_PAD_IDX,
         trg_pad_idx=TRG_PAD_IDX,
-    )    
+    )
 
     # Initializes the model's weights
     model.apply(initialize_weights)
 
     # Initializes Adam Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-
 
     # Initializes Cross Entropy Loss Function
     criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
@@ -128,7 +134,7 @@ def gated_model_train():
     )
 
 
-# Run Training Loop:
+################################################################3
 # Run training Gated Transformers
 (
     gated_transformers_training_loss,

@@ -196,7 +196,9 @@ if __name__ == "__main__":
 
     train_iterator, valid_iterator, test_iterator, SRC, TRG = run_preprocess()
 
-    print(f"Preprocess First batch Train Iterator: {next(iter(train_iterator))}")
+    print(f"Preprocess First batch Train Iterator: {next(iter(train_iterator)).src}")
+    print(f"Preprocess First batch Train Iterator: {next(iter(train_iterator)).trg}")
+
     print(f"Preprocess First batch Validate Iterator: {next(iter(valid_iterator))}")
     print(f"Preprocess First batch Test Iterator: {next(iter(test_iterator))}")
     print(f"Preprocess SRC {SRC}")

@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from typing import Tuple
 import math
+import time
 
 
 def count_parameters(model):
@@ -120,16 +121,17 @@ def epoch_time(start_time, end_time):
 # Training
 
 
-def origin_transformers_main(
+def gated_transformers_main(
     model, train_iterator, optimizer, criterion, CLIP, valid_iterator, n_epochs
-):
+) -> Tuple[float, float, float, float]:
     print(
-        f"The original transformers model has {count_parameters(model):,} trainable parameters"
+        f"The gated transformers model has {count_parameters(model):,} trainable parameters"
     )
 
     best_valid_loss = float("inf")
 
     for epoch in range(n_epochs):
+
         start_time = time.time()
 
         train_loss = train(model, train_iterator, optimizer, criterion, CLIP)
@@ -141,7 +143,7 @@ def origin_transformers_main(
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), "original-tut6-model.pt")
+            torch.save(model.state_dict(), "gated-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(
@@ -154,19 +156,12 @@ def origin_transformers_main(
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
 
-def test_origin_transformers_model(
+def test_gated_transformers_model(
     model, test_iterator, criterion
 ) -> Tuple[float, float]:
-    """Tests the trained origin transformers model with the testing dataset
-
-    Return
-    ----------
-    test_loss:
-        Testing loss
-    math.exp(test_loss):
-        Testing PPL
-    """
-    model.load_state_dict(torch.load("original-tut6-model.pt"))
+    model.load_state_dict(
+        torch.load("gated-tut6-model.pt", map_location=torch.device("cpu"))
+    )
 
     test_loss = evaluate(model, test_iterator, criterion)
 

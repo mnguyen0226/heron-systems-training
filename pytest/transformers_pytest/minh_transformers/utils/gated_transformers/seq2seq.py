@@ -125,5 +125,3 @@ class Seq2Seq(nn.Module):
         # attention = [batch size, n heads, trg len, src len]
 
         return output, attention
-
-
