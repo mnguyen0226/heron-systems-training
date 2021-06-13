@@ -14,7 +14,8 @@ from utils.gated_transformers.training_utils import (  # training, testing loop
 )
 from utils.gated_transformers.encoder import Encoder  # encoder
 from utils.gated_transformers.decoder import Decoder  # decoder
-from utils.gated_transformers.seq2seq import Seq2Seq  # seqseq
+from utils.gated_transformers.seq2seq import Seq2Seq, EmbeddingLayer  # seqseq
+
 
 def gated_model_train():
 
@@ -43,6 +44,10 @@ def gated_model_train():
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
+    emb = EmbeddingLayer(
+        input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
+    )
+
     enc = Encoder(
         input_dim=INPUT_DIM,
         hid_dim=HID_DIM,
@@ -50,7 +55,6 @@ def gated_model_train():
         n_heads=GATED_ENC_HEADS,
         pf_dim=ENC_PF_DIM,
         dropout=ENC_DROPOUT,
-        device=device,
     )
 
     dec = Decoder(
@@ -60,15 +64,14 @@ def gated_model_train():
         n_heads=GATED_DEC_HEADS,
         pf_dim=DEC_PF_DIM,
         dropout=DEC_DROPOUT,
-        device=device,
     )
 
     model = Seq2Seq(
+        embedding=emb,
         encoder=enc,
         decoder=dec,
         src_pad_idx=SRC_PAD_IDX,
         trg_pad_idx=TRG_PAD_IDX,
-        device=device,
     ).to(device)
 
     # Initializes the model's weights - Xavier
@@ -131,6 +134,7 @@ def gated_model_train():
         gated_transformers_testing_loss,
         gated_transformers_testing_PPL,
     )
+
 
 # Run training Gated Transformers
 (

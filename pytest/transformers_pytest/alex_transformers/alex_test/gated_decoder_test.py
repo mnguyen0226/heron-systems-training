@@ -156,7 +156,7 @@ def test_gated_transformer():
     ).to(0)
     optim = torch.optim.Adam(transformer.parameters(), 0.01)
     loss_fcn = nn.CrossEntropyLoss()
-    possible_labels = list(range(1, 2 ** nb_bits))
+    possible_labels = l.ist(range(1, 2 ** nb_bits))
 
     permutations = torch.tensor(
         [
@@ -176,7 +176,8 @@ def test_gated_transformer():
     z_train = torch.zeros(
         (sequence_len * training_inputs.shape[0], sequence_len, nb_bits)
     )
-    y_train = torch.zeros((sequence_len * training_labels.shape[0], 1))
+    y_train = torch.zeros
+    +5((sequence_len * training_labels.shape[0], 1))
     # Loop over every single sequence
     for s_idx, (x_s, y_s) in enumerate(zip(training_inputs, training_labels)):
         # Loop through the sequence

@@ -3,7 +3,7 @@
 from typing import Tuple
 import torch
 import torch.nn as nn
-
+from utils.preprocess import device
 
 from utils.gated_transformers.encoder import MultiHeadAttentionLayer
 from utils.gated_transformers.encoder import LNorm
@@ -20,7 +20,6 @@ class Decoder(nn.Module):
         n_heads: int,
         pf_dim: int,
         dropout: float,
-        device: str,
         max_length=100,
     ):
         """Decoder class for Gated Transformer which is similar to the Encoder but also has
@@ -42,14 +41,11 @@ class Decoder(nn.Module):
             output dimension for PFF layer
         dropout: float
             dropout rate = 0.1
-        device: str
-            cpu or gpu
         max_length: int
             the Output Embedding's position embedding has a vocab size of 100 which means our
                 model can accept sentences up to 100 tokens long
         """
         super().__init__()
-        self.device = device
         self.tok_embedding = nn.Embedding(
             num_embeddings=output_dim, embedding_dim=hid_dim
         )
@@ -60,7 +56,7 @@ class Decoder(nn.Module):
         # gated decoder layer
         self.layers = nn.ModuleList(
             [
-                GatedDecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                GatedDecoderLayer(hid_dim, n_heads, pf_dim, dropout)
                 for _ in range(n_layers)
             ]
         )
@@ -107,7 +103,7 @@ class Decoder(nn.Module):
 
         # pos = [batch size, trg len]
         pos = (
-            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
+            torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
         )
 
         # trg = [batch size, trg len, hid dim]
@@ -128,8 +124,7 @@ class Decoder(nn.Module):
 
 class GatedDecoderLayer(nn.Module):
     def __init__(
-        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
-    ):
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float):
         """Gated Decoder Layer for the Decoder
 
         Self-attention layer use decoder's representation as Q,V,K similar as the EncoderLayer.
@@ -155,17 +150,15 @@ class GatedDecoderLayer(nn.Module):
             input feed-forward dimension
         dropout: float
             dropout rate = 0.1
-        device: str
-            cpu or gpu
         """
         super().__init__()
         self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout)
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
         self.encoder_attention = MultiHeadAttentionLayer(
-            hid_dim, n_heads, dropout, device
+            hid_dim, n_heads, dropout
         )
         self.second_gate = Gate(hid_dim=hid_dim)
 

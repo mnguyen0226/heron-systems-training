@@ -3,6 +3,7 @@
 from typing import Tuple
 import torch
 import torch.nn as nn
+from utils.preprocess import device
 
 
 class Encoder(nn.Module):
@@ -14,7 +15,6 @@ class Encoder(nn.Module):
         n_heads: int,
         pf_dim: int,
         dropout: float,
-        device: str,
         max_length=100,
     ):
         """Encoder class for Gated Transformer which is used for
@@ -34,31 +34,17 @@ class Encoder(nn.Module):
             dimension of the output from the Feedforward layer
         dropout: float
             dropout rate = 0.1
-        device: str
-            cpu or gpu
         max_length: int
             the Input Embedding's position embedding has a vocab size of 100 which means our model can
                 accept sentences up to 100 tokens long
         """
         super().__init__()
-        self.device = device
-        self.tok_embedding = nn.Embedding(
-            num_embeddings=input_dim, embedding_dim=hid_dim
-        )
-        self.pos_embedding = nn.Embedding(
-            num_embeddings=max_length, embedding_dim=hid_dim
-        )
-
         self.layers = nn.ModuleList(
             [
-                GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+                GatedEncoderLayer(hid_dim, n_heads, pf_dim, dropout)
                 for _ in range(n_layers)
             ]
         )
-        self.dropout = nn.Dropout(dropout)
-        self.scale = (
-            hid_dim ** 0.5
-        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self, src: Tuple[int, int], src_mask: Tuple[int, int, int, int]
@@ -78,27 +64,8 @@ class Encoder(nn.Module):
         src: [batch_size, src_len, hid_dim]. This is the dimension that will be maintain till output of Decoder
             position-encoded & embedded output of the encoder layer. The src will be fetched into the Decoder
         """
-        batch_size = src.shape[0]
-        src_len = src.shape[1]
-
-        # positional vector. pos = [batch_size, src_len]
-        pos = (
-            torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-        )
-
-        # src = [batch_size, src_len, hid_dim]. Here we dropout the input source so we have to dropout
-        # before doing Gating Layer
-        src = self.dropout(
-            (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
-        )
-
-        # print(f"TESTING Encoder input: {src.shape}")
-
         for layer in self.layers:
-            # src = [batch_size, src_len, hid_dim] = [batch_size, frequency, hidden layer dim]
             src = layer(src, src_mask)
-
-            # print(f"TESTING Encoder output: {src.shape}")
 
         return src
 
@@ -176,7 +143,7 @@ class Gate(nn.Module):
 
 class GatedEncoderLayer(nn.Module):
     def __init__(
-        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float, device: str
+        self, hid_dim: int, n_heads: int, pf_dim: int, dropout: float,
     ):
         """Gated Encoder layer of Encoder of the Transformer
 
@@ -190,12 +157,10 @@ class GatedEncoderLayer(nn.Module):
             input feed-forward dimension
         dropout: float
             dropout rate = 0.1
-        device: str
-            cpu or gpu
         """
         super().__init__()
         self.first_layer_norm = LNorm(normalized_shape=hid_dim)
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout)
         self.first_gate = Gate(hid_dim=hid_dim)
 
         self.second_layer_norm = LNorm(normalized_shape=hid_dim)
@@ -263,7 +228,7 @@ class GatedEncoderLayer(nn.Module):
 
 
 class MultiHeadAttentionLayer(nn.Module):
-    def __init__(self, hid_dim: int, n_heads: int, dropout: float, device: str):
+    def __init__(self, hid_dim: int, n_heads: int, dropout: float):
         """Multi/single Head Attention Layer. This layer define Q,K,V of the GateEncoderLayer
 
         Parameters
@@ -274,8 +239,6 @@ class MultiHeadAttentionLayer(nn.Module):
             number of heads for attention mechanism
         dropout: float
             dropout rate = 0.1
-        device: str
-            cpu or gpu
         """
         super().__init__()
 
@@ -304,7 +267,7 @@ class MultiHeadAttentionLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.scale = (
             hid_dim ** 0.5
-        )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
+        ) # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
