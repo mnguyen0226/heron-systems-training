@@ -166,6 +166,7 @@ class Seq2Seq(nn.Module):
         print("SEQ2SEQ: Finish Embedding Encoder----------------------------- \n")
 
         embedding_src_enc = embedding_src_enc.permute(0, 2, 1) # B F S 
+        print(f"SEQ2SEQ: {embedding_src_enc.shape}")
 
         # enc_src = self.encoder(embedding_src_enc, src_mask)
         enc_src = self.encoder(embedding_src_enc)
@@ -174,14 +175,18 @@ class Seq2Seq(nn.Module):
         print("SEQ2SEQ: Finish Encoding----------------------------- \n")
 
         embedding_trg_dec = self.embedding_dec(trg=trg)
+        embedding_trg_dec = embedding_trg_dec.permute(0, 2, 1) # B F S 
 
+        print(f"SEQ2SEQ: {embedding_trg_dec.shape}")
         print("SEQ2SEQ: Finish Embedding Decoder----------------------------- \n")
 
-        output, attention = self.decoder(embedding_trg_dec, enc_src, trg_mask, src_mask)
+        # output, attention = self.decoder(embedding_trg_dec, enc_src)
+        output = self.decoder(embedding_trg_dec, enc_src)
 
         # output = [batch size, trg len, output dim]
         # attention = [batch size, n heads, trg len, src len]
 
         print("SEQ2SEQ: Finish Decoding----------------------------- \n")
 
-        return output, attention
+        # return output, attention
+        return output, 1

@@ -66,15 +66,16 @@ class Decoder(nn.Module):
         torch.Tensor
             The decoded sequence
         """
-        prev_seq_norm = self.auto_norm(prev_seq)
-        prev_seq_attn = self.auto_attn(q_input=prev_seq_norm, kv_input=prev_seq_norm)
-        prev_seq_gate = self.auto_gate(prev_seq, prev_seq_attn)
+        prev_seq_norm = self.auto_norm(prev_seq) # layer norm take in the target
+        prev_seq_attn = self.auto_attn(q_input=prev_seq_norm, kv_input=prev_seq_norm) # attention of the target
+        prev_seq_gate = self.auto_gate(prev_seq, prev_seq_attn) # gate of the target
 
-        q_input = self.decoder_norm(prev_seq_gate)
-        kv_input = self.encoder_norm(encoder_out)
+        q_input = self.decoder_norm(prev_seq_gate) # layer normalize of the target
+        kv_input = self.encoder_norm(encoder_out) # # layer normalize of the encoder output
 
-        attn_out = self.decoder_attn(q_input=q_input, kv_input=kv_input)
-        gate_out = self.first_gate(q_input, attn_out)
+        attn_out = self.decoder_attn(q_input=q_input, kv_input=kv_input) # decoder attention output
+        gate_out = self.first_gate(q_input, attn_out) # gating
+
         gate_norm = self.proj_norm(gate_out)
         proj_out = self.projection(gate_norm)
         proj_gate = self.second_gate(gate_out, proj_out)

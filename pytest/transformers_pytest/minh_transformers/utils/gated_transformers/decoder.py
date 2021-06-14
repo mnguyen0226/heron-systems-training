@@ -44,6 +44,8 @@ class DecoderLayers(nn.Module):
             [
                 Decoder(
                     encoder_output_shape=encoder_output_shape,
+                    max_seq_len=1,
+                    scale=False,
                     nb_heads=nb_heads,
                     dropout=dropout,
                 )
@@ -60,8 +62,8 @@ class DecoderLayers(nn.Module):
         self,
         trg: Tuple[int, int],
         enc_src: Tuple[int, int, int],
-        trg_mask: Tuple[int, int, int],
-        src_mask: Tuple[int, int, int],
+        # trg_mask: Tuple[int, int, int],
+        # src_mask: Tuple[int, int, int],
     ) -> Tuple[tuple, tuple]:
         """Feed-forward of the Decoder contains of preprocess data, DecoderLayer and prediction
 
@@ -87,18 +89,24 @@ class DecoderLayers(nn.Module):
         for layer in self.layers:
             # trg = [batch size, trg len, hid dim]
             # attention = [batch size, n heads, trg len, src len]
-            trg, attention = layer(trg, enc_src, trg_mask, src_mask)
+            # trg, attention = layer(trg, enc_src, trg_mask, src_mask)
+            # trg, attention = layer(trg, enc_src)
+            trg = layer(trg, enc_src)
+
 
         # output = [batch size, trg len, output dim]
+        print(f"DECODER: size of processed target {trg.shape}")
         output = self.fc_out(trg)
 
-        return output, attention
+        # return output, attention
+        return output
 
 
 class Decoder(nn.Module):
     def __init__(
         self, 
         encoder_output_shape: Tuple[int, int], # hid_dim, 1
+        max_seq_len: int,
         scale: bool, 
         nb_heads: int, 
         dropout: float
@@ -128,81 +136,133 @@ class Decoder(nn.Module):
             dropout rate = 0.1
         """
         super().__init__()
-        self.first_layer_norm = LNorm(in_shape=encoder_output_shape)
-        self.self_attention = Attn(encoder_output_shape, nb_heads, dropout)
-        self.first_gate = Gate(in_shape=encoder_output_shape)
+        # self.first_layer_norm = LNorm(in_shape=encoder_output_shape)
+        # self.self_attention = Attn(encoder_output_shape, nb_heads, dropout)
+        # self.first_gate = Gate(in_shape=encoder_output_shape)
 
-        self.second_layer_norm = LNorm(in_shape=encoder_output_shape)
-        self.encoder_attention = Attn(encoder_output_shape, nb_heads, dropout)
-        self.second_gate = Gate(in_shape=encoder_output_shape)
+        # self.second_layer_norm = LNorm(in_shape=encoder_output_shape)
+        # self.encoder_attention = Attn(encoder_output_shape, nb_heads, dropout)
+        # self.second_gate = Gate(in_shape=encoder_output_shape)
 
-        self.third_layer_norm = LNorm(in_shape=encoder_output_shape)
-        self.positionwise_feedforward = Projection(encoder_output_shape, dropout)
-        self.third_gate = Gate(in_shape=encoder_output_shape)
+        # self.third_layer_norm = LNorm(in_shape=encoder_output_shape)
+        # self.positionwise_feedforward = Projection(encoder_output_shape, dropout)
+        # self.third_gate = Gate(in_shape=encoder_output_shape)
 
-        self.dropout = nn.Dropout(dropout)
+        # self.dropout = nn.Dropout(dropout)
+        
+        #################################
+        # The shape of the auto-regressive input
+        auto_regressive_shape = (encoder_output_shape[0], max_seq_len)
+
+        # This handles the auto-regressive encoding of the decoder
+        self.auto_norm = LNorm(auto_regressive_shape)
+        self.auto_attn = Attn(auto_regressive_shape, nb_heads, scale, dropout)
+        self.auto_gate = Gate(auto_regressive_shape)
+
+        # This section is almost identical to an encoder, but instead of using the output of the
+        # previous layers for q, k, and v, we instead use the encoder's to generate k and v
+        self.encoder_norm = LNorm(encoder_output_shape)
+        self.decoder_norm = LNorm(auto_regressive_shape)
+        self.decoder_attn = Attn(encoder_output_shape, nb_heads, scale, dropout)
+        self.first_gate = Gate(auto_regressive_shape)
+
+        self.proj_norm = LNorm(auto_regressive_shape)
+        self.projection = Projection(auto_regressive_shape, dropout)
+        self.second_gate = Gate(auto_regressive_shape)
+
+    # def forward(
+    #     self,
+    #     trg: Tuple[int, int, int],
+    #     enc_src: Tuple[int, int, int],
+    #     trg_mask: Tuple[int, int, int, int],
+    #     src_mask: Tuple[int, int, int, int],
+    # ) -> Tuple[tuple, tuple]:
+    #     """Feed-forward layer for the Gated Decoder
+
+    #     Parameters
+    #     ----------
+    #     trg: [batch size, trg len, hid dim]
+    #         target token(s)
+    #     enc_src: [batch size, src len, hid dim]
+    #         encoder_source - the output from Encoder
+    #     trg_mask: [batch size, 1, trg len, trg len]
+    #         target mask to prevent the decoder from "cheating" by paying attention to tokens that are
+    #             "ahead" of the one it is currently processing as it processes all tokens in the target
+    #                 sentence in parallel
+    #     src_mask: [batch size, 1, 1, src len]
+    #         source mask is used to prevent the multi-head attention layer from attending to <pad>
+    #             tokens within the source sentence.
+
+    #     Return
+    #     ----------
+    #     trg: [batch size, trg len, hid dim]
+    #         the predicted token(s)
+    #     attention: [batch size, n heads, trg len, src len]
+    #         We will not use this for our case
+    #     """
+    #     # first layer norm - already dropped out from the Decoder class
+    #     trg = self.first_layer_norm(trg)
+
+    #     # self-attention
+    #     _trg, _ = self.self_attention(
+    #         query=trg, key=trg, value=trg, mask=trg_mask
+    #     )  # _trg = [batch size, trg len, hid dim]
+
+    #     # first gate
+    #     first_gate_output, _ = self.first_gate(self.dropout(_trg), trg)
+
+    #     # second layer norm - already dropped out from the first gate
+    #     trg = self.second_layer_norm(first_gate_output)
+
+    #     # encoder-attention
+    #     _trg, attention = self.encoder_attention(
+    #         query=trg, key=enc_src, value=enc_src, mask=src_mask
+    #     )  # _trg = [batch size, trg len, hid dim]
+
+    #     # second gate
+    #     second_gate_output, _ = self.second_gate(self.dropout(_trg), trg)
+
+    #     # third layer norm - already dropped out from the second gate
+    #     trg = self.third_layer_norm(
+    #         second_gate_output
+    #     )  # _trg = [batch size, trg len, hid dim]
+
+    #     # positionwise feedforward
+    #     _trg = self.positionwise_feedforward(trg)
+
+    #     # third gate
+    #     third_gate_output, _ = self.third_gate(self.dropout(_trg), trg)
+
+    #     return third_gate_output, attention
 
     def forward(
-        self,
-        trg: Tuple[int, int, int],
-        enc_src: Tuple[int, int, int],
-        trg_mask: Tuple[int, int, int, int],
-        src_mask: Tuple[int, int, int, int],
-    ) -> Tuple[tuple, tuple]:
-        """Feed-forward layer for the Gated Decoder
+        self, prev_seq: torch.Tensor, encoder_out: torch.Tensor
+    ) -> torch.Tensor:
+        """The forward function of the decoder
 
         Parameters
         ----------
-        trg: [batch size, trg len, hid dim]
-            target token(s)
-        enc_src: [batch size, src len, hid dim]
-            encoder_source - the output from Encoder
-        trg_mask: [batch size, 1, trg len, trg len]
-            target mask to prevent the decoder from "cheating" by paying attention to tokens that are
-                "ahead" of the one it is currently processing as it processes all tokens in the target
-                    sentence in parallel
-        src_mask: [batch size, 1, 1, src len]
-            source mask is used to prevent the multi-head attention layer from attending to <pad>
-                tokens within the source sentence.
-
-        Return
-        ----------
-        trg: [batch size, trg len, hid dim]
-            the predicted token(s)
-        attention: [batch size, n heads, trg len, src len]
-            We will not use this for our case
+        prev_seq: torch.Tensor
+            The previous output of the decoder (or the start-of-sequence token)
+        encoder_out: torch.Tensor
+            The output from the encoder paired with this decoder
+        Returns
+        -------
+        torch.Tensor
+            The decoded sequence
         """
-        # first layer norm - already dropped out from the Decoder class
-        trg = self.first_layer_norm(trg)
+        prev_seq_norm = self.auto_norm(prev_seq) # layer norm take in the target
+        prev_seq_attn = self.auto_attn(q_input=prev_seq_norm, kv_input=prev_seq_norm) # attention of the target
+        prev_seq_gate = self.auto_gate(prev_seq, prev_seq_attn) # gate of the target
 
-        # self-attention
-        _trg, _ = self.self_attention(
-            query=trg, key=trg, value=trg, mask=trg_mask
-        )  # _trg = [batch size, trg len, hid dim]
+        q_input = self.decoder_norm(prev_seq_gate) # layer normalize of the target
+        kv_input = self.encoder_norm(encoder_out) # # layer normalize of the encoder output
 
-        # first gate
-        first_gate_output, _ = self.first_gate(self.dropout(_trg), trg)
+        attn_out = self.decoder_attn(q_input=q_input, kv_input=kv_input) # decoder attention output
+        gate_out = self.first_gate(q_input, attn_out) # gating
 
-        # second layer norm - already dropped out from the first gate
-        trg = self.second_layer_norm(first_gate_output)
+        gate_norm = self.proj_norm(gate_out)
+        proj_out = self.projection(gate_norm)
+        proj_gate = self.second_gate(gate_out, proj_out)
 
-        # encoder-attention
-        _trg, attention = self.encoder_attention(
-            query=trg, key=enc_src, value=enc_src, mask=src_mask
-        )  # _trg = [batch size, trg len, hid dim]
-
-        # second gate
-        second_gate_output, _ = self.second_gate(self.dropout(_trg), trg)
-
-        # third layer norm - already dropped out from the second gate
-        trg = self.third_layer_norm(
-            second_gate_output
-        )  # _trg = [batch size, trg len, hid dim]
-
-        # positionwise feedforward
-        _trg = self.positionwise_feedforward(trg)
-
-        # third gate
-        third_gate_output, _ = self.third_gate(self.dropout(_trg), trg)
-
-        return third_gate_output, attention
+        return proj_gate
