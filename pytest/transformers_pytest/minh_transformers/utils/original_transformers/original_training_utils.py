@@ -216,7 +216,7 @@ def origin_transformers_main(
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
 
-def test_origin_transformers_model(
+def validate_origin_transformers_model(
     model, test_iterator, criterion
 ) -> Tuple[float, float]:
     """Tests the trained origin transformers model with the testing dataset

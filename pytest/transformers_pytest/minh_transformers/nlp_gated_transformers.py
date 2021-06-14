@@ -7,7 +7,7 @@ from typing import Tuple
 # Import methods for Alex Gated Transformers
 from utils.alex_gated_transformers.gated_training_utils import (
     gated_transformers_main,
-    test_gated_transformers_model,
+    validate_gated_transformers_model,
     gated_initialize_weights,
 )
 from utils.alex_gated_transformers.gated_encoder import EncoderLayers
@@ -21,7 +21,7 @@ from utils.alex_gated_transformers.gated_seq2seq import (
 # Import methods for Original Gated Transformers
 from utils.original_transformers.original_training_utils import (
     origin_transformers_main,
-    test_origin_transformers_model,
+    validate_origin_transformers_model,
     origin_initialize_weights,
 )
 from utils.original_transformers.original_encoder import Encoder
@@ -32,7 +32,7 @@ from utils.original_transformers.original_seq2seq import Seq2Seq
 from utils.masked_gated_transformers.masked_gated_training_utils import (
     masked_gated_transformers_main,
     masked_initialize_weights,
-    masked_test_gated_transformers_model,
+    validate_masked_gated_transformers_model,
 )
 from utils.masked_gated_transformers.masked_gated_encoder import MaskedEncoder
 from utils.masked_gated_transformers.masked_gated_decoder import MaskedDecoder
@@ -143,7 +143,7 @@ def alex_gated_model_train() -> Tuple[float, float, float, float, float, float]:
         "\n-----------------------------------------------------------------------------------------------------------------"
     )
     print(
-        f"\nThe gated Transformer has {gated_transformers_enc_nb_heads} encoder head(s), {gated_transformers_dec_nb_heads}\
+        f"\nThe Gated Transformer has {gated_transformers_enc_nb_heads} encoder head(s), {gated_transformers_dec_nb_heads}\
     decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
     )
 
@@ -171,7 +171,7 @@ def alex_gated_model_train() -> Tuple[float, float, float, float, float, float]:
     (
         gated_transformers_testing_loss,
         gated_transformers_testing_PPL,
-    ) = test_gated_transformers_model(
+    ) = validate_gated_transformers_model(
         model=model, test_iterator=test_iterator, criterion=criterion
     )
 
@@ -278,7 +278,7 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     (
         origin_transformers_testing_loss,
         origin_transformers_testing_PPL,
-    ) = test_origin_transformers_model(
+    ) = validate_origin_transformers_model(
         model=model, test_iterator=test_iterator, criterion=criterion
     )
 
@@ -391,7 +391,7 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
     (
         masked_transformers_testing_loss,
         masked_transformers_testing_PPL,
-    ) = masked_test_gated_transformers_model(
+    ) = validate_masked_gated_transformers_model(
         model=model, test_iterator=test_iterator, criterion=criterion
     )
 
@@ -440,14 +440,14 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
 ##################################################################################################
 # PYTEST ALEX GATED TRANSFORMERS VS ORIGINAL TRANSFORMERS
 class TestGatedTransformersValidatingSet1:
-    def test_validating_loss(self):
+    def test_validating_loss_1(self):
         """Validates the validating loss of gated transformers < original transformers'"""
         global gated_transformers_validating_loss, origin_transformers_validating_loss
         assert Decimal(gated_transformers_validating_loss) < Decimal(
             origin_transformers_validating_loss
         )
 
-    def test_validating_PPL(self):
+    def test_validating_PPL_1(self):
         """Validates the validating PPL of gated transfomers < original transformers'"""
         global gated_transformers_validating_PPL, origin_transformers_validating_PPL
         assert Decimal(gated_transformers_validating_PPL) < Decimal(
@@ -456,14 +456,14 @@ class TestGatedTransformersValidatingSet1:
 
 
 class TestGatedTransformersTestingSet1:
-    def test_testing_loss(self):
+    def test_testing_loss_1(self):
         """Validates the testing loss of the gated transformers < origin transformers'"""
         global gated_transformers_testing_loss, origin_transformers_testing_loss
         assert Decimal(gated_transformers_testing_loss) < Decimal(
             origin_transformers_testing_loss
         )
 
-    def test_testing_PPL(self):
+    def test_testing_PPL_1(self):
         """Validates the testing PPL of the gated transformers < origin transformers'"""
         global gated_transformers_testing_PPL, origin_transformers_testing_PPL
         assert Decimal(gated_transformers_testing_PPL) < Decimal(
@@ -471,34 +471,34 @@ class TestGatedTransformersTestingSet1:
         )
 
 
-# PYTEST ALEX GATED TRANSFORMERS VS MASKED TRANSFORMERS
-class TestGatedTransformersValidatingSet1:
-    def test_validating_loss(self):
-        """Validates the validating loss of gated transformers < masked gated transformers'"""
+# PYTEST ALEX GATED TRANSFORMERS VS MASKED TRANSFORMERS (MASKED TRANSFORMER IS EXPECTED TO PERFORMED BEST)
+class TestGatedTransformersValidatingSet2:
+    def test_validating_loss_2(_self):
+        """Validates the validating loss of gated transformers > masked gated transformers'"""
         global gated_transformers_validating_loss, masked_transformers_validating_loss
-        assert Decimal(gated_transformers_validating_loss) < Decimal(
+        assert Decimal(gated_transformers_validating_loss) > Decimal(
             masked_transformers_validating_loss
         )
 
-    def test_validating_PPL(self):
-        """Validates the validating PPL of gated transfomers < masked gated transformers'"""
+    def test_validating_PPL_2(self):
+        """Validates the validating PPL of gated transfomers > masked gated transformers'"""
         global gated_transformers_validating_PPL, masked_transformers_validating_PPL
-        assert Decimal(gated_transformers_validating_PPL) < Decimal(
+        assert Decimal(gated_transformers_validating_PPL) > Decimal(
             masked_transformers_validating_PPL
         )
 
 
-class TestGatedTransformersTestingSet1:
-    def test_testing_loss(self):
-        """Validates the testing loss of the gated transformers < masked gated transformers'"""
+class TestGatedTransformersTestingSet2:
+    def test_testing_loss_2(self):
+        """Validates the testing loss of the gated transformers > masked gated transformers'"""
         global gated_transformers_testing_loss, masked_transformers_testing_loss
-        assert Decimal(gated_transformers_testing_loss) < Decimal(
+        assert Decimal(gated_transformers_testing_loss) > Decimal(
             masked_transformers_testing_loss
         )
 
-    def test_testing_PPL(self):
-        """Validates the testing PPL of the gated transformers < masked gated transformers'"""
+    def test_testing_PPL_2(self):
+        """Validates the testing PPL of the gated transformers > masked gated transformers'"""
         global gated_transformers_testing_PPL, masked_transformers_testing_PPL
-        assert Decimal(gated_transformers_testing_PPL) < Decimal(
+        assert Decimal(gated_transformers_testing_PPL) > Decimal(
             masked_transformers_testing_PPL
         )
