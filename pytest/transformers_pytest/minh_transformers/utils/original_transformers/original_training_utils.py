@@ -66,7 +66,7 @@ def train(
 
     epoch_loss = 0
 
-    for i, batch in enumerate(iterator):
+    for batch in iterator:
 
         src = batch.src
         trg = batch.trg
@@ -121,7 +121,7 @@ def evaluate(model, iterator: int, criterion: int) -> float:
 
     with torch.no_grad():
 
-        for i, batch in enumerate(iterator):
+        for batch in iterator:
 
             src = batch.src
             trg = batch.trg

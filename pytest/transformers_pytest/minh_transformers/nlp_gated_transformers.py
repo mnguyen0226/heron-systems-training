@@ -16,38 +16,48 @@ from utils.alex_gated_transformers.gated_seq2seq import (
     EmbeddingDecLayer,
 )
 
-##################################################################################################3
+from utils.original_transformers.training_utils import {
+    origin_transformers_main, test_origin_transformers_model, initialize_weights
+
+}
+
+##################################################################################################
+# GLOBAL VARIABLE FOR TESTING
+# initializer training iterator, SRC field, TRG field
+(
+    train_iterator,
+    valid_iterator,
+    test_iterator,
+    SRC,
+    TRG,
+) = run_preprocess()
+
+# Initialize variables for Gated Transformers. This can be adjusted
+INPUT_DIM = len(SRC.vocab)
+OUTPUT_DIM = len(TRG.vocab)
+HID_DIM = 256
+GATED_ENC_LAYERS = 1 # 3 
+GATED_DEC_LAYERS = 1
+GATED_ENC_HEADS = 8
+GATED_DEC_HEADS = 8
+ENC_PF_DIM = 256  # 512
+DEC_PF_DIM = 256
+ENC_DROPOUT = 0.1
+DEC_DROPOUT = 0.1
+
+# Initializes variables for training process. This can be adjusted
+N_EPOCHS = 10
+CLIP = 1
+LEARNING_RATE = 0.0005
+
+# Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
+SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
+TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
+
+
+##################################################################################################
+# ALEX GATED TRANSFORMERS
 def alex_gated_model_train():
-    # initializer training iterator, SRC field, TRG field
-    (
-        train_iterator,
-        valid_iterator,
-        test_iterator,
-        SRC,
-        TRG,
-    ) = run_preprocess()
-
-    # Initialize variables for Gated Transformers. This can be adjusted
-    INPUT_DIM = len(SRC.vocab)
-    OUTPUT_DIM = len(TRG.vocab)
-    HID_DIM = 256
-    GATED_ENC_LAYERS = 1 # 3 
-    GATED_DEC_LAYERS = 1
-    GATED_ENC_HEADS = 8
-    GATED_DEC_HEADS = 8
-    ENC_PF_DIM = 256  # 512
-    DEC_PF_DIM = 256
-    ENC_DROPOUT = 0.1
-    DEC_DROPOUT = 0.1
-
-    # Initializes variables for training process. This can be adjusted
-    N_EPOCHS = 10
-    CLIP = 1
-    LEARNING_RATE = 0.0005
-
-    # Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
-    SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
-    TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
     emb_enc = EmbeddingEncLayer(
         input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
@@ -141,8 +151,8 @@ def alex_gated_model_train():
         gated_transformers_testing_PPL,
     )
 
-
-# Run training Gated Transformers
+##################################################################################################
+# Run training Alex Gated Transformers
 (
     gated_transformers_training_loss,
     gated_transformers_validating_loss,
