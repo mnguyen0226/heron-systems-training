@@ -2,24 +2,41 @@ from decimal import Decimal
 import torch
 import torch.nn as nn
 from utils.preprocess import run_preprocess, device
+from typing import Tuple
 
-from utils.alex_gated_transformers.gated_training_utils import ( 
+# Import methods for Alex Gated Transformers
+from utils.alex_gated_transformers.gated_training_utils import (
     gated_transformers_main,
     test_gated_transformers_model,
-    initialize_weights,
+    gated_initialize_weights,
 )
-from utils.alex_gated_transformers.gated_encoder import EncoderLayers 
+from utils.alex_gated_transformers.gated_encoder import EncoderLayers
 from utils.alex_gated_transformers.gated_decoder import DecoderLayers
 from utils.alex_gated_transformers.gated_seq2seq import (
-    Seq2Seq,
+    GatedSeq2Seq,
     EmbeddingEncLayer,
     EmbeddingDecLayer,
 )
 
-from utils.original_transformers.training_utils import {
-    origin_transformers_main, test_origin_transformers_model, initialize_weights
+# Import methods for Original Gated Transformers
+from utils.original_transformers.original_training_utils import (
+    origin_transformers_main,
+    test_origin_transformers_model,
+    origin_initialize_weights,
+)
+from utils.original_transformers.original_encoder import Encoder
+from utils.original_transformers.original_decoder import Decoder
+from utils.original_transformers.original_seq2seq import Seq2Seq
 
-}
+# Import methods for Masked Gated Transformers
+from utils.masked_gated_transformers.masked_gated_training_utils import (
+    masked_gated_transformers_main,
+    masked_initialize_weights,
+    masked_test_gated_transformers_model,
+)
+from utils.masked_gated_transformers.masked_gated_encoder import MaskedEncoder
+from utils.masked_gated_transformers.masked_gated_decoder import MaskedDecoder
+from utils.masked_gated_transformers.masked_gated_seq2seq import MaskedSeq2Seq
 
 ##################################################################################################
 # GLOBAL VARIABLE FOR TESTING
@@ -36,10 +53,10 @@ from utils.original_transformers.training_utils import {
 INPUT_DIM = len(SRC.vocab)
 OUTPUT_DIM = len(TRG.vocab)
 HID_DIM = 256
-GATED_ENC_LAYERS = 1 # 3 
-GATED_DEC_LAYERS = 1
-GATED_ENC_HEADS = 8
-GATED_DEC_HEADS = 8
+ENC_LAYERS = 1  # 3
+DEC_LAYERS = 1
+ENC_HEADS = 8
+DEC_HEADS = 8
 ENC_PF_DIM = 256  # 512
 DEC_PF_DIM = 256
 ENC_DROPOUT = 0.1
@@ -57,8 +74,24 @@ TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
 ##################################################################################################
 # ALEX GATED TRANSFORMERS
-def alex_gated_model_train():
+def alex_gated_model_train() -> Tuple[float, float, float, float, float, float]:
+    """Creates a training function for Gated Transformers
 
+    Return
+    ----------
+    gated_transformers_training_loss: float
+        Gated transformers training loss
+    gated_transformers_validating_loss: float
+        Gated transformers validating loss
+    gated_transformers_training_PPL: float
+        Gated Transformers training PPL
+    gated_transformers_validating_PPL: float
+        Gated Transformers validating PPL
+    gated_transformers_testing_loss: float
+        Gated Transformers testing loss
+    gated_transformers_testing_PPL: float
+        Gated Transformers testing PPL
+    """
     emb_enc = EmbeddingEncLayer(
         input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
     )
@@ -68,20 +101,20 @@ def alex_gated_model_train():
 
     enc = EncoderLayers(
         in_shape=[HID_DIM, 1],
-        n_layers=GATED_ENC_LAYERS,
-        nb_heads=GATED_ENC_HEADS,
+        n_layers=ENC_LAYERS,
+        nb_heads=ENC_HEADS,
         dropout=ENC_DROPOUT,
     )
 
     dec = DecoderLayers(
         output_dim=OUTPUT_DIM,
         encoder_output_shape=[HID_DIM, 1],
-        n_layers=GATED_DEC_LAYERS,
-        nb_heads=GATED_DEC_HEADS,
+        n_layers=DEC_LAYERS,
+        nb_heads=DEC_HEADS,
         dropout=DEC_DROPOUT,
     )
 
-    model = Seq2Seq(
+    model = GatedSeq2Seq(
         embedding_enc=emb_enc,
         embedding_dec=emb_dec,
         encoder=enc,
@@ -91,7 +124,7 @@ def alex_gated_model_train():
     ).to(device)
 
     # Initializes the model's weights - Xavier
-    model.apply(initialize_weights)
+    model.apply(gated_initialize_weights)
 
     # Initializes Adam optimizer for updating weight
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -100,17 +133,17 @@ def alex_gated_model_train():
     criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
 
     # Variables for printing format
-    gated_transformers_enc_layers = GATED_ENC_LAYERS
-    gated_transformers_dec_layers = GATED_DEC_LAYERS
-    gated_transformers_enc_nb_heads = GATED_ENC_HEADS
-    gated_transformers_dec_nb_heads = GATED_DEC_HEADS
+    gated_transformers_enc_layers = ENC_LAYERS
+    gated_transformers_dec_layers = DEC_LAYERS
+    gated_transformers_enc_nb_heads = ENC_HEADS
+    gated_transformers_dec_nb_heads = DEC_HEADS
 
     # results from Gated Transformers
     print(
-        "\n------------------------------------------------------------------------------------------"
+        "\n-----------------------------------------------------------------------------------------------------------------"
     )
     print(
-        f"\nThe gated Transformer has {gated_transformers_enc_nb_heads} encoder head(s), {gated_transformers_dec_nb_heads} \
+        f"\nThe gated Transformer has {gated_transformers_enc_nb_heads} encoder head(s), {gated_transformers_dec_nb_heads},\
     decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
     )
 
@@ -151,7 +184,249 @@ def alex_gated_model_train():
         gated_transformers_testing_PPL,
     )
 
+
 ##################################################################################################
+# ORIGINAL "ATTENTION IS ALL YOU NEED" TRANSFORMERS
+def original_model_train() -> Tuple[float, float, float, float, float, float]:
+    """Creates a training function for Original Transformers
+
+    Return
+    ----------
+    original_transformers_training_loss: float
+        Original transformers training loss
+    original_transformers_validating_loss: float
+        Original transformers validating loss
+    original_transformers_training_PPL: float
+        Original Transformers training PPL
+    original_transformers_validating_PPL: float
+        Original Transformers validating PPL
+    original_transformers_testing_loss: float
+        Original Transformers testing loss
+    original_transformers_testing_PPL: float
+        Original Transformers testing PPL
+    """
+    # Initializes Encoder layers
+    enc = Encoder(
+        input_dim=INPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=ENC_LAYERS,
+        n_heads=ENC_HEADS,
+        pf_dim=ENC_PF_DIM,
+        dropout=ENC_DROPOUT,
+        device=device,
+    )
+
+    # Initializes Decoder layers
+    dec = Decoder(
+        output_dim=OUTPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=DEC_LAYERS,
+        n_heads=DEC_HEADS,
+        pf_dim=DEC_PF_DIM,
+        dropout=DEC_DROPOUT,
+        device=device,
+    )
+
+    # Initializes model
+    model = Seq2Seq(enc, dec, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device)
+
+    # Initialize the model's weights
+    model.apply(origin_initialize_weights)
+
+    # Initializes Adam optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # Initializes Cross Entropy Loss Function
+    criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
+
+    # Variables for printint format
+    origin_transformers_enc_layers = ENC_LAYERS
+    origin_transformers_dec_layers = DEC_LAYERS
+    origin_transformers_enc_n_heads = ENC_HEADS
+    origin_transformers_dec_n_heads = DEC_HEADS
+
+    # results from Transformers "Attention Is All You Need"
+    print(
+        "\n-----------------------------------------------------------------------------------------------------------------"
+    )
+    print(
+        f"\nThe original Transformer has {origin_transformers_enc_n_heads} encoder head(s), {origin_transformers_dec_n_heads}\
+    decoder head(s), {origin_transformers_enc_layers} encoder layer(s), {origin_transformers_dec_layers} decoder layer(s)"
+    )
+
+    print("---------------------------------------------")
+    print("Training Test Bench Transformers Training Set")
+    print("---------------------------------------------")
+    (
+        origin_transformers_training_loss,
+        origin_transformers_validating_loss,
+        origin_transformers_training_PPL,
+        origin_transformers_validating_PPL,
+    ) = origin_transformers_main(
+        model=model,
+        train_iterator=train_iterator,
+        optimizer=optimizer,
+        criterion=criterion,
+        CLIP=CLIP,
+        valid_iterator=valid_iterator,
+        n_epochs=N_EPOCHS,
+    )
+
+    print("\n--------------------------------------------")
+    print("Training Test Bench Transformers Testing Set")
+    print("--------------------------------------------")
+    (
+        origin_transformers_testing_loss,
+        origin_transformers_testing_PPL,
+    ) = test_origin_transformers_model(
+        model=model, test_iterator=test_iterator, criterion=criterion
+    )
+
+    return (
+        origin_transformers_training_loss,
+        origin_transformers_validating_loss,
+        origin_transformers_training_PPL,
+        origin_transformers_validating_PPL,
+        origin_transformers_testing_loss,
+        origin_transformers_testing_PPL,
+    )
+
+
+##################################################################################################
+# MASKED GATED TRANSFORMERS
+def masked_model_train() -> Tuple[float, float, float, float, float, float]:
+    """Creates a training function for Masked Gated Transformers
+
+    Return
+    ----------
+    masked_transformers_training_loss: float
+        Masked gated transformers training loss
+    masked_transformers_validating_loss: float
+        Masked gated transformers validating loss
+    masked_transformers_training_PPL: float
+        Masked gated Transformers training PPL
+    masked_transformers_validating_PPL: float
+        Masked gated Transformers validating PPL
+    masked_transformers_testing_loss: float
+        Masked gated Transformers testing loss
+    masked_transformers_testing_PPL: float
+        Masked gated Transformers testing PPL
+    """
+    # Initializes Encoder layers, not putting input sentence
+    enc = MaskedEncoder(
+        input_dim=INPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=ENC_LAYERS,
+        n_heads=ENC_HEADS,
+        pf_dim=ENC_PF_DIM,
+        dropout=ENC_DROPOUT,
+        device=device,
+    )
+
+    # Initializes Decoder layers
+    dec = MaskedDecoder(
+        output_dim=OUTPUT_DIM,
+        hid_dim=HID_DIM,
+        n_layers=DEC_LAYERS,
+        n_heads=DEC_HEADS,
+        pf_dim=DEC_PF_DIM,
+        dropout=DEC_DROPOUT,
+        device=device,
+    )
+
+    # Initializes model
+    model = MaskedSeq2Seq(
+        encoder=enc,
+        decoder=dec,
+        src_pad_idx=SRC_PAD_IDX,
+        trg_pad_idx=TRG_PAD_IDX,
+        device=device,
+    ).to(device)
+
+    # Initializes the model's weights
+    model.apply(masked_initialize_weights)
+
+    # Initializes Adam optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # Initializes Cross Entropy Loss Function
+    criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
+
+    # Variables for printing format
+    masked_transformers_enc_layers = ENC_LAYERS
+    masked_transformers_dec_layers = DEC_LAYERS
+    masked_transformers_enc_n_heads = ENC_HEADS
+    masked_transformers_dec_n_heads = DEC_HEADS
+
+    # results from Masked Gated Transformers
+    print(
+        "\n-----------------------------------------------------------------------------------------------------------------"
+    )
+    print(
+        f"\nThe masked gated Transformer has {masked_transformers_enc_n_heads} encoder head(s), {masked_transformers_dec_n_heads} \
+    decoder head(s), {masked_transformers_enc_layers} encoder layer(s), {masked_transformers_dec_layers} decoder layer(s)"
+    )
+
+    print("------------------------------------------------")
+    print("Traininng Masked Gated Transformers Training Set")
+    print("------------------------------------------------")
+    (
+        masked_transformers_training_loss,
+        masked_transformers_validating_loss,
+        masked_transformers_training_PPL,
+        masked_transformers_validating_PPL,
+    ) = masked_gated_transformers_main(
+        model=model,
+        train_iterator=train_iterator,
+        optimizer=optimizer,
+        criterion=criterion,
+        CLIP=CLIP,
+        valid_iterator=valid_iterator,
+        n_epochs=N_EPOCHS,
+    )
+
+    print("-----------------------------------------------")
+    print("Traininng Masked Gated Transformers Testing Set")
+    print("-----------------------------------------------")
+    (
+        masked_transformers_testing_loss,
+        masked_transformers_testing_PPL,
+    ) = masked_test_gated_transformers_model(
+        model=model, test_iterator=test_iterator, criterion=criterion
+    )
+
+    return (
+        masked_transformers_training_loss,
+        masked_transformers_validating_loss,
+        masked_transformers_training_PPL,
+        masked_transformers_validating_PPL,
+        masked_transformers_testing_loss,
+        masked_transformers_testing_PPL,
+    )
+
+
+##################################################################################################
+# Run training Masked Gated Transformers
+(
+    masked_transformers_training_loss,
+    masked_transformers_validating_loss,
+    masked_transformers_training_PPL,
+    masked_transformers_validating_PPL,
+    masked_transformers_testing_loss,
+    masked_transformers_testing_PPL,
+) = masked_model_train()
+
+
+# Run training Original Transformers
+(
+    origin_transformers_training_loss,
+    origin_transformers_validating_loss,
+    origin_transformers_training_PPL,
+    origin_transformers_validating_PPL,
+    origin_transformers_testing_loss,
+    origin_transformers_testing_PPL,
+) = original_model_train()
+
 # Run training Alex Gated Transformers
 (
     gated_transformers_training_loss,
@@ -161,3 +436,49 @@ def alex_gated_model_train():
     gated_transformers_testing_loss,
     gated_transformers_testing_PPL,
 ) = alex_gated_model_train()
+
+##################################################################################################
+# class TestGatedTransformersTrainingSet:
+#     def test_training_loss(self):
+#         """Validated the training loss of gated transformers < original transformers'"""
+#         global gated_transformers_training_loss, origin_transformers_training_loss
+#         assert Decimal(gated_transformers_training_loss) < Decimal(
+#             origin_transformers_training_loss
+#         )
+
+#     def test_validating_loss(self):
+#         """Validates the validating loss of gated transformers < original transformers'"""
+#         global gated_transformers_validating_loss, origin_transformers_validating_loss
+#         assert Decimal(gated_transformers_validating_loss) < Decimal(
+#             origin_transformers_validating_loss
+#         )
+
+#     def test_training_PPL(self):
+#         """Validates the training PPL of gated transformers < original transformers'"""
+#         global gated_transformers_training_PPL, origin_transformers_training_PPL
+#         assert Decimal(gated_transformers_training_PPL) < Decimal(
+#             origin_transformers_training_PPL
+#         )
+
+#     def test_validating_PPL(self):
+#         """Validates the validating PPL of gated transfomers < original transformers'"""
+#         global gated_transformers_validating_PPL, origin_transformers_validating_PPL
+#         assert Decimal(gated_transformers_validating_PPL) < Decimal(
+#             origin_transformers_validating_PPL
+#         )
+
+
+# class TestGatedTransformersTestingSet:
+#     def test_testing_loss(self):
+#         """Validates the testing loss of the gated transformers < origin transformers'"""
+#         global gated_transformers_testing_loss, origin_transformers_testing_loss
+#         assert Decimal(gated_transformers_testing_loss) < Decimal(
+#             origin_transformers_testing_loss
+#         )
+
+#     def test_testing_PPL(self):
+#         """Validates the testing PPL of the gated transformers < origin transformers'"""
+#         global gated_transformers_testing_PPL, origin_transformers_testing_PPL
+#         assert Decimal(gated_transformers_testing_PPL) < Decimal(
+#             origin_transformers_testing_PPL
+#         )

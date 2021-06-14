@@ -22,7 +22,7 @@ def count_parameters(model: Tuple[tuple, tuple, tuple, tuple, str]) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def initialize_weights(m: Tuple[tuple, tuple, tuple, tuple, str]):
+def gated_initialize_weights(m: Tuple[tuple, tuple, tuple, tuple, str]):
     """Xavier uniform initialization
 
     Parameters

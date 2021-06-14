@@ -161,21 +161,21 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         exts=(".de", ".en"), fields=(SRC, TRG)
     )
 
-    # used to validates the training, validating, and testing
-    print(f"PREPROCESS Number of training examples: {len(train_data.examples)}")
-    print(f"PREPROCESS Number of validating examples: {len(valid_data.examples)}")
-    print(f"PREPROCESS Number of testing examples: {len(test_data.examples)}")
+    # # used to validates the training, validating, and testing
+    # print(f"PREPROCESS Number of training examples: {len(train_data.examples)}")
+    # print(f"PREPROCESS Number of validating examples: {len(valid_data.examples)}")
+    # print(f"PREPROCESS Number of testing examples: {len(test_data.examples)}")
 
-    print(vars(train_data.examples[0]))
+    # print(vars(train_data.examples[0]))
 
     # build vocabularies by converting any tokens that appear less than 2 times into
     # <unk> tokens
     SRC.build_vocab(train_data, min_freq=2)
     TRG.build_vocab(train_data, min_freq=2)
 
-    # used to check the source & target vocab
-    print(f"PREPROCESS Unique tokens in source (de) vocabulary: {len(SRC.vocab)}")
-    print(f"PREPROCESS Unique tokens in target (en) vocabulary: {len(TRG.vocab)}")
+    # # used to check the source & target vocab
+    # print(f"PREPROCESS Unique tokens in source (de) vocabulary: {len(SRC.vocab)}")
+    # print(f"PREPROCESS Unique tokens in target (en) vocabulary: {len(TRG.vocab)}")
 
     # create iterator too splite the training, validating, and testing to batch size
     train_iterator, valid_iterator, test_iterator = data_iter(
@@ -186,10 +186,10 @@ def run_preprocess() -> Tuple[list, list, list, list, list]:
         test_data=test_data,
     )
 
-    print(
-        f"PREPROCESS First batch Train Iterator: {next(iter(train_iterator))}"
-    )  # this is the shape passed into the neural network
-    print(f"PREPROCESS First batch Validate Iterator: {next(iter(valid_iterator))}")
-    print(f"PREPROCESS First batch Test Iterator: {next(iter(test_iterator))}")
+    # print(
+    #     f"PREPROCESS First batch Train Iterator: {next(iter(train_iterator))}"
+    # )  # this is the shape passed into the neural network
+    # print(f"PREPROCESS First batch Validate Iterator: {next(iter(valid_iterator))}")
+    # print(f"PREPROCESS First batch Test Iterator: {next(iter(test_iterator))}")
 
     return train_iterator, valid_iterator, test_iterator, SRC, TRG

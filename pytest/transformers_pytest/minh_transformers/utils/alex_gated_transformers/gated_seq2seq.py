@@ -54,7 +54,7 @@ class EmbeddingDecLayer(nn.Module):
         return trg
 
 
-class Seq2Seq(nn.Module):
+class GatedSeq2Seq(nn.Module):
     def __init__(
         self,
         embedding_enc: Tuple[int, int, float],

@@ -4,10 +4,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from utils.alex_gated_transformers.gated_encoder import Attn
-from utils.alex_gated_transformers.gated_encoder import LNorm
-from utils.alex_gated_transformers.gated_encoder import Projection
-from utils.alex_gated_transformers.gated_encoder import Gate
+from utils.alex_gated_transformers.gated_encoder import Attn, LNorm, Projection, Gate
 
 
 class DecoderLayers(nn.Module):
