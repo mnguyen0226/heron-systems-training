@@ -1,36 +1,37 @@
-# The goal is to create a training loop working
-# fix the encoder split similar to Alex
-# fix the decoder split similar to Alex
-
 from decimal import Decimal
 import torch
 import torch.nn as nn
 from utils.preprocess import run_preprocess, device
 
-from utils.gated_transformers.training_utils import (  # training, testing loop
+from utils.gated_transformers.gated_training_utils import (
     gated_transformers_main,
     test_gated_transformers_model,
     initialize_weights,
 )
-from utils.gated_transformers.encoder import EncoderLayers  # encoder
-from utils.gated_transformers.decoder import DecoderLayers  # decoder
-from utils.gated_transformers.seq2seq import (
+from utils.gated_transformers.gated_encoder import EncoderLayers  # encoder
+from utils.gated_transformers.gated_decoder import DecoderLayers  # decoder
+from utils.gated_transformers.gated_seq2seq import (
     Seq2Seq,
     EmbeddingEncLayer,
     EmbeddingDecLayer,
-)  # seqseq
+)
 
 
 def gated_model_train():
-
     # initializer training iterator, SRC field, TRG field
-    (train_iterator, valid_iterator, test_iterator, SRC, TRG,) = run_preprocess()
+    (
+        train_iterator,
+        valid_iterator,
+        test_iterator,
+        SRC,
+        TRG,
+    ) = run_preprocess()
 
     # Initialize variables for Gated Transformers. This can be adjusted
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
     HID_DIM = 256
-    GATED_ENC_LAYERS = 1
+    GATED_ENC_LAYERS = 1  # 3
     GATED_DEC_LAYERS = 1
     GATED_ENC_HEADS = 8
     GATED_DEC_HEADS = 8
