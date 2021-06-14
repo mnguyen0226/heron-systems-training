@@ -12,9 +12,13 @@ from utils.gated_transformers.training_utils import (  # training, testing loop
     test_gated_transformers_model,
     initialize_weights,
 )
-from utils.gated_transformers.encoder import Encoder  # encoder
-from utils.gated_transformers.decoder import Decoder  # decoder
-from utils.gated_transformers.seq2seq import Seq2Seq, EmbeddingEncLayer, EmbeddingDecLayer  # seqseq
+from utils.gated_transformers.encoder import EncoderLayers  # encoder
+from utils.gated_transformers.decoder import DecoderLayers  # decoder
+from utils.gated_transformers.seq2seq import (
+    Seq2Seq,
+    EmbeddingEncLayer,
+    EmbeddingDecLayer,
+)  # seqseq
 
 
 def gated_model_train():
@@ -26,8 +30,8 @@ def gated_model_train():
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
     HID_DIM = 256
-    GATED_ENC_LAYERS = 3
-    GATED_DEC_LAYERS = 3
+    GATED_ENC_LAYERS = 1
+    GATED_DEC_LAYERS = 1
     GATED_ENC_HEADS = 8
     GATED_DEC_HEADS = 8
     ENC_PF_DIM = 256  # 512
@@ -44,21 +48,25 @@ def gated_model_train():
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-    emb_enc = EmbeddingEncLayer(input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT)
-    emb_dec = EmbeddingDecLayer(output_dim=OUTPUT_DIM, hid_dim=HID_DIM, dropout=DEC_DROPOUT)
+    emb_enc = EmbeddingEncLayer(
+        input_dim=INPUT_DIM, hid_dim=HID_DIM, dropout=ENC_DROPOUT
+    )
+    emb_dec = EmbeddingDecLayer(
+        output_dim=OUTPUT_DIM, hid_dim=HID_DIM, dropout=DEC_DROPOUT
+    )
 
-    enc = Encoder(
+    enc = EncoderLayers(
         in_shape=[HID_DIM, 1],
         n_layers=GATED_ENC_LAYERS,
-        n_heads=GATED_ENC_HEADS,
+        nb_heads=GATED_ENC_HEADS,
         dropout=ENC_DROPOUT,
     )
 
-    dec = Decoder(
+    dec = DecoderLayers(
         output_dim=OUTPUT_DIM,
         encoder_output_shape=[HID_DIM, 1],
         n_layers=GATED_DEC_LAYERS,
-        n_heads=GATED_DEC_HEADS,
+        nb_heads=GATED_DEC_HEADS,
         dropout=DEC_DROPOUT,
     )
 
@@ -83,15 +91,15 @@ def gated_model_train():
     # Variables for printing format
     gated_transformers_enc_layers = GATED_ENC_LAYERS
     gated_transformers_dec_layers = GATED_DEC_LAYERS
-    gated_transformers_enc_n_heads = GATED_ENC_HEADS
-    gated_transformers_dec_n_heads = GATED_DEC_HEADS
+    gated_transformers_enc_nb_heads = GATED_ENC_HEADS
+    gated_transformers_dec_nb_heads = GATED_DEC_HEADS
 
     # results from Gated Transformers
     print(
         "\n------------------------------------------------------------------------------------------"
     )
     print(
-        f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} \
+        f"\nThe gated Transformer has {gated_transformers_enc_nb_heads} encoder head(s), {gated_transformers_dec_nb_heads} \
     decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
     )
 

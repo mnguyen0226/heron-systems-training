@@ -85,57 +85,57 @@ class Seq2Seq(nn.Module):
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
 
-    def make_src_mask(self, src: Tuple[int, int, int]) -> Tuple[int, int, int, int]:
-        """Making input source mask by checking where the source sequence is not equal to a <pad> token
-            It is 1 where the token is not a <pad> token and 0 when it is
+    # def make_src_mask(self, src: Tuple[int, int, int]) -> Tuple[int, int, int, int]:
+    #     """Making input source mask by checking where the source sequence is not equal to a <pad> token
+    #         It is 1 where the token is not a <pad> token and 0 when it is
 
-        Parameters
-        ----------
-        src: [batch size, src len]
-            input training tokenized source sentence(s)
+    #     Parameters
+    #     ----------
+    #     src: [batch size, src len]
+    #         input training tokenized source sentence(s)
 
-        Return
-        ----------
-        src_mask: [batch size, 1, 1, src len]
-            mask of the input source
-        """
-        # src = [batch size, src len]
+    #     Return
+    #     ----------
+    #     src_mask: [batch size, 1, 1, src len]
+    #         mask of the input source
+    #     """
+    #     # src = [batch size, src len]
 
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
-        # src_mask = [batch size, 1, 1, src len]
+    #     src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+    #     # src_mask = [batch size, 1, 1, src len]
 
-        return src_mask
+    #     return src_mask
 
-    def make_trg_mask(self, trg: Tuple[int, int]) -> Tuple[int, int, int, int]:
-        """Making a target mask similar to srouce mask. Then we create a subsequence mask trg_sub_mask.
-            This creates a diagonal matrix where the elements above the diagonal will be 0 and the elements
-                below the diagonal will be set to
-            whatever the input tensor is.
+    # def make_trg_mask(self, trg: Tuple[int, int]) -> Tuple[int, int, int, int]:
+    #     """Making a target mask similar to srouce mask. Then we create a subsequence mask trg_sub_mask.
+    #         This creates a diagonal matrix where the elements above the diagonal will be 0 and the elements
+    #             below the diagonal will be set to
+    #         whatever the input tensor is.
 
-        Parameters
-        ----------
-        trg: [batch size, trg len]
-            target tokens/labels
+    #     Parameters
+    #     ----------
+    #     trg: [batch size, trg len]
+    #         target tokens/labels
 
-        Return
-        ----------
-        trg_mask: [batch size, 1, trg len, trg len]
-            mask of the target label
-        """
-        # trg = [batch size, trg len]
+    #     Return
+    #     ----------
+    #     trg_mask: [batch size, 1, trg len, trg len]
+    #         mask of the target label
+    #     """
+    #     # trg = [batch size, trg len]
 
-        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(2)
-        # trg_pad_mask = [batch size, 1, 1, trg len]
+    #     trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(2)
+    #     # trg_pad_mask = [batch size, 1, 1, trg len]
 
-        trg_len = trg.shape[1]
+    #     trg_len = trg.shape[1]
 
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=device)).bool()
-        # trg_sub_mask = [trg len, trg len]
+    #     trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=device)).bool()
+    #     # trg_sub_mask = [trg len, trg len]
 
-        trg_mask = trg_pad_mask & trg_sub_mask
-        # trg_mask = [batch size, 1, trg len, trg len]
+    #     trg_mask = trg_pad_mask & trg_sub_mask
+    #     # trg_mask = [batch size, 1, trg len, trg len]
 
-        return trg_mask
+    #     return trg_mask
 
     def forward(
         self, src: Tuple[int, int], trg: Tuple[int, int]
@@ -156,29 +156,32 @@ class Seq2Seq(nn.Module):
         attention: [batch size, n heads, trg len, src len]
             we will not care about this in our case
         """
-        src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        # src_mask = self.make_src_mask(src)
+        # trg_mask = self.make_trg_mask(trg)
         # src_mask = [batch size, 1, 1, src len]
         # trg_mask = [batch size, 1, trg len, trg len]
 
-        embedding_src_enc = self.embedding_enc(src=src)
+        embedding_src_enc = self.embedding_enc(src=src) # B S F
 
-        print("SEQ2SEQ: Finish Embedding Encoder \n")
+        print("SEQ2SEQ: Finish Embedding Encoder----------------------------- \n")
 
-        enc_src = self.encoder(embedding_src_enc, src_mask)
+        embedding_src_enc = embedding_src_enc.permute(0, 2, 1) # B F S 
+
+        # enc_src = self.encoder(embedding_src_enc, src_mask)
+        enc_src = self.encoder(embedding_src_enc)
         # enc_src = [batch size, src len, hid dim]
 
-        print("SEQ2SEQ: Finish Encoding \n")
+        print("SEQ2SEQ: Finish Encoding----------------------------- \n")
 
         embedding_trg_dec = self.embedding_dec(trg=trg)
 
-        print("SEQ2SEQ: Finish Embedding Decoder \n")
+        print("SEQ2SEQ: Finish Embedding Decoder----------------------------- \n")
 
         output, attention = self.decoder(embedding_trg_dec, enc_src, trg_mask, src_mask)
 
         # output = [batch size, trg len, output dim]
         # attention = [batch size, n heads, trg len, src len]
 
-        print("SEQ2SEQ: Finish Decoding \n")
+        print("SEQ2SEQ: Finish Decoding----------------------------- \n")
 
         return output, attention

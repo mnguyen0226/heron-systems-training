@@ -162,8 +162,6 @@ class Encoder(nn.Module):  # this is basically the EncoderLayer() class
         torch.Tensor
             Output of the encoder with shape [B, F, S] (unchanged from input)
         """
-        print("TESTING: Encoder forward function")
-
         xs_norm = self.first_norm(xs)
         attn_out = self.attn_layer(xs_norm, xs_norm)
         gate_out = self.first_gate(xs, attn_out)

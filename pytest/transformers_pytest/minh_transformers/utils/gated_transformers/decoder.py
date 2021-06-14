@@ -11,13 +11,13 @@ from utils.gated_transformers.encoder import Projection
 from utils.gated_transformers.encoder import Gate
 
 
-class Decoder(nn.Module):
+class DecoderLayers(nn.Module):
     def __init__(
         self,
         output_dim: int,
         encoder_output_shape: Tuple[int, int],
         n_layers: int,
-        n_heads: int,
+        nb_heads: int,
         dropout: float,
     ):
         """Decoder class for Gated Transformer which is similar to the Encoder but also has
@@ -33,23 +33,18 @@ class Decoder(nn.Module):
             input hidden dim to the Decoder Layer
         n_layers: int
             number of DecoderLater layers
-        n_heads: int
+        nb_heads: int
             number of heads for attention mechanism
         dropout: float
             dropout rate = 0.1
         """
         super().__init__()
-        # self.tok_embedding = nn.Embedding(
-        #     num_embeddings=output_dim, embedding_dim=hid_dim
-        # )
-        # self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
 
-        # gated decoder layer
         self.layers = nn.ModuleList(
             [
-                GatedDecoderLayer(
+                Decoder(
                     encoder_output_shape=encoder_output_shape,
-                    n_heads=n_heads,
+                    nb_heads=nb_heads,
                     dropout=dropout,
                 )
                 for _ in range(n_layers)
@@ -60,12 +55,6 @@ class Decoder(nn.Module):
         self.fc_out = nn.Linear(
             in_features=encoder_output_shape[0], out_features=output_dim
         )
-
-        # self.dropout = nn.Dropout(dropout)
-
-        # self.scale = (
-        #     hid_dim ** 0.5
-        # )  # Alex's implementation: nb_features ** 0.5 if scale else 1.0
 
     def forward(
         self,
@@ -95,17 +84,6 @@ class Decoder(nn.Module):
         attention: [batch size, n heads, trg len, src len]
             we will not use this
         """
-        # batch_size = trg.shape[0]
-        # trg_len = trg.shape[1]
-
-        # # pos = [batch size, trg len]
-        # pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
-
-        # # trg = [batch size, trg len, hid dim]
-        # trg = self.dropout(
-        #     (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
-        # )
-
         for layer in self.layers:
             # trg = [batch size, trg len, hid dim]
             # attention = [batch size, n heads, trg len, src len]
@@ -117,9 +95,13 @@ class Decoder(nn.Module):
         return output, attention
 
 
-class GatedDecoderLayer(nn.Module):
+class Decoder(nn.Module):
     def __init__(
-        self, encoder_output_shape: Tuple[int, int], n_heads: int, dropout: float
+        self, 
+        encoder_output_shape: Tuple[int, int], # hid_dim, 1
+        scale: bool, 
+        nb_heads: int, 
+        dropout: float
     ):
         """Gated Decoder Layer for the Decoder
 
@@ -140,18 +122,18 @@ class GatedDecoderLayer(nn.Module):
         ----------
         hid_dim: int
             input hidden_dim from the processed positioned-encoded & embedded vectorized input text
-        n_heads: int
+        nb_heads: int
             number of head(s) for attention mechanism
         dropout: float
             dropout rate = 0.1
         """
         super().__init__()
         self.first_layer_norm = LNorm(in_shape=encoder_output_shape)
-        self.self_attention = Attn(encoder_output_shape, n_heads, dropout)
+        self.self_attention = Attn(encoder_output_shape, nb_heads, dropout)
         self.first_gate = Gate(in_shape=encoder_output_shape)
 
         self.second_layer_norm = LNorm(in_shape=encoder_output_shape)
-        self.encoder_attention = Attn(encoder_output_shape, n_heads, dropout)
+        self.encoder_attention = Attn(encoder_output_shape, nb_heads, dropout)
         self.second_gate = Gate(in_shape=encoder_output_shape)
 
         self.third_layer_norm = LNorm(in_shape=encoder_output_shape)
