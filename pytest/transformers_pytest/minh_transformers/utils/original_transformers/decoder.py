@@ -127,6 +127,7 @@ class Decoder(nn.Module):
 
         output = self.fc_out(trg)
         # output = [batch size, trg len, output dim]
+        print(f"DECODER output {output.shape}")
 
         return output, attention
 
@@ -243,5 +244,6 @@ class DecoderLayer(nn.Module):
         trg = self.ff_layer_norm(trg + self.dropout(_trg))
         # trg = [batch size, trg len, hid dim]
         # attention = [batch size, n heads, trg len, src len]
+        print(f"DECODER Original Output {trg.shape}")
 
         return trg, attention

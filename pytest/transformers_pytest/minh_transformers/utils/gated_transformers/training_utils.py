@@ -85,6 +85,8 @@ def train(
         # output = [batch size * trg len - 1, output dim]
         # trg = [batch size * trg len - 1]
 
+        # print(f"TRAINING output: {output.shape}")
+        # print(f"TRAINING Target: {trg.shape}\n")
         loss = criterion(output, trg)
 
         loss.backward()

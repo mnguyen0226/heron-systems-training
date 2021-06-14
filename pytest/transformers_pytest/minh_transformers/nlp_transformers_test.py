@@ -22,164 +22,164 @@ from utils.original_transformers.training_utils import (
     test_origin_transformers_model,
 )
 
-from utils.gated_transformers.training_utils import (
-    gated_transformers_main,
-    test_gated_transformers_model,
-)
-from utils.gated_transformers.encoder import Encoder
-from utils.gated_transformers.decoder import Decoder
-from utils.gated_transformers.seq2seq import Seq2Seq
-from utils.gated_transformers.training_utils import (
-    initialize_weights,
-    gated_transformers_main,
-    test_gated_transformers_model,
-)
+# from utils.gated_transformers.training_utils import (
+#     gated_transformers_main,
+#     test_gated_transformers_model,
+# )
+# from utils.gated_transformers.encoder import Encoder
+# from utils.gated_transformers.decoder import Decoder
+# from utils.gated_transformers.seq2seq import Seq2Seq
+# from utils.gated_transformers.training_utils import (
+#     initialize_weights,
+#     gated_transformers_main,
+#     test_gated_transformers_model,
+# )
 
-########################################################################
-# Gated Transformers Train
-def gated_model_train() -> Tuple[float, float, float, float, float, float]:
-    """Creates a training function for Gated Transformers
+# ########################################################################
+# # Gated Transformers Train
+# def gated_model_train() -> Tuple[float, float, float, float, float, float]:
+#     """Creates a training function for Gated Transformers
 
-    Return
-    ----------
-    gated_transformers_training_loss: float
-        Gated transformers training loss
-    gated_transformers_validating_loss: float
-        Gated transformers validating loss
-    gated_transformers_training_PPL: float
-        Gated Transformers training PPL
-    gated_transformers_validating_PPL: float
-        Gated Transformers validating PPL
-    gated_transformers_testing_loss: float
-        Gated Transformers testing loss
-    gated_transformers_testing_PPL: float
-        Gated Transformers testing PPL
-    """
-    # Initialize iterator, SRC field, and TRG field
-    (
-        train_iterator,
-        valid_iterator,
-        test_iterator,
-        SRC,
-        TRG,
-    ) = run_preprocess()  # this can't be subscripted
+#     Return
+#     ----------
+#     gated_transformers_training_loss: float
+#         Gated transformers training loss
+#     gated_transformers_validating_loss: float
+#         Gated transformers validating loss
+#     gated_transformers_training_PPL: float
+#         Gated Transformers training PPL
+#     gated_transformers_validating_PPL: float
+#         Gated Transformers validating PPL
+#     gated_transformers_testing_loss: float
+#         Gated Transformers testing loss
+#     gated_transformers_testing_PPL: float
+#         Gated Transformers testing PPL
+#     """
+#     # Initialize iterator, SRC field, and TRG field
+#     (
+#         train_iterator,
+#         valid_iterator,
+#         test_iterator,
+#         SRC,
+#         TRG,
+#     ) = run_preprocess()  # this can't be subscripted
 
-    # Initialize variables for Gated Transformers. This can be adjusted
-    INPUT_DIM = len(SRC.vocab)
-    OUTPUT_DIM = len(TRG.vocab)
-    HID_DIM = 256
-    GATED_ENC_LAYERS = 3
-    GATED_DEC_LAYERS = 3
-    GATED_ENC_HEADS = 8
-    GATED_DEC_HEADS = 8
-    ENC_PF_DIM = 512
-    DEC_PF_DIM = 512
-    ENC_DROPOUT = 0.1
-    DEC_DROPOUT = 0.1
+#     # Initialize variables for Gated Transformers. This can be adjusted
+#     INPUT_DIM = len(SRC.vocab)
+#     OUTPUT_DIM = len(TRG.vocab)
+#     HID_DIM = 256
+#     GATED_ENC_LAYERS = 3
+#     GATED_DEC_LAYERS = 3
+#     GATED_ENC_HEADS = 8
+#     GATED_DEC_HEADS = 8
+#     ENC_PF_DIM = 512
+#     DEC_PF_DIM = 512
+#     ENC_DROPOUT = 0.1
+#     DEC_DROPOUT = 0.1
 
-    # Initializes variables for training process. This can be adjusted
-    N_EPOCHS = 10
-    CLIP = 1
-    LEARNING_RATE = 0.0005
+#     # Initializes variables for training process. This can be adjusted
+#     N_EPOCHS = 10
+#     CLIP = 1
+#     LEARNING_RATE = 0.0005
 
-    # Initializes Encoder layers, not putting input sentence
-    enc = Encoder(
-        input_dim=INPUT_DIM,
-        hid_dim=HID_DIM,
-        n_layers=GATED_ENC_LAYERS,
-        n_heads=GATED_ENC_HEADS,
-        pf_dim=ENC_PF_DIM,
-        dropout=ENC_DROPOUT,
-        device=device,
-    )
+#     # Initializes Encoder layers, not putting input sentence
+#     enc = Encoder(
+#         input_dim=INPUT_DIM,
+#         hid_dim=HID_DIM,
+#         n_layers=GATED_ENC_LAYERS,
+#         n_heads=GATED_ENC_HEADS,
+#         pf_dim=ENC_PF_DIM,
+#         dropout=ENC_DROPOUT,
+#         device=device,
+#     )
 
-    # Initializes Decoder layers
-    dec = Decoder(
-        output_dim=OUTPUT_DIM,
-        hid_dim=HID_DIM,
-        n_layers=GATED_DEC_LAYERS,
-        n_heads=GATED_DEC_HEADS,
-        pf_dim=DEC_PF_DIM,
-        dropout=DEC_DROPOUT,
-        device=device,
-    )
+#     # Initializes Decoder layers
+#     dec = Decoder(
+#         output_dim=OUTPUT_DIM,
+#         hid_dim=HID_DIM,
+#         n_layers=GATED_DEC_LAYERS,
+#         n_heads=GATED_DEC_HEADS,
+#         pf_dim=DEC_PF_DIM,
+#         dropout=DEC_DROPOUT,
+#         device=device,
+#     )
 
-    # Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
-    SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
-    TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
+#     # Defines whole Seq2Seq encapsulating model. Convert tokenized string to integers
+#     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
+#     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-    print(f"Tokenized SRC: {SRC.pad_token}")  # <pad>
-    print(f"Numericalized SRC_PAD_IDX: {SRC_PAD_IDX}")  # <pad> is numericalized into 1
+#     print(f"Tokenized SRC: {SRC.pad_token}")  # <pad>
+#     print(f"Numericalized SRC_PAD_IDX: {SRC_PAD_IDX}")  # <pad> is numericalized into 1
 
-    # Initializes model
-    model = Seq2Seq(
-        encoder=enc,
-        decoder=dec,
-        src_pad_idx=SRC_PAD_IDX,
-        trg_pad_idx=TRG_PAD_IDX,
-        device=device,
-    ).to(device)
+#     # Initializes model
+#     model = Seq2Seq(
+#         encoder=enc,
+#         decoder=dec,
+#         src_pad_idx=SRC_PAD_IDX,
+#         trg_pad_idx=TRG_PAD_IDX,
+#         device=device,
+#     ).to(device)
 
-    # Initializes the model's weights
-    model.apply(initialize_weights)
+#     # Initializes the model's weights
+#     model.apply(initialize_weights)
 
-    # Initializes Adam optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+#     # Initializes Adam optimizer
+#     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    # Initializes Cross Entropy Loss Function
-    criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
+#     # Initializes Cross Entropy Loss Function
+#     criterion = nn.CrossEntropyLoss(ignore_index=TRG_PAD_IDX)
 
-    # Variables for printing format
-    gated_transformers_enc_layers = GATED_ENC_LAYERS
-    gated_transformers_dec_layers = GATED_DEC_LAYERS
-    gated_transformers_enc_n_heads = GATED_ENC_HEADS
-    gated_transformers_dec_n_heads = GATED_DEC_HEADS
+#     # Variables for printing format
+#     gated_transformers_enc_layers = GATED_ENC_LAYERS
+#     gated_transformers_dec_layers = GATED_DEC_LAYERS
+#     gated_transformers_enc_n_heads = GATED_ENC_HEADS
+#     gated_transformers_dec_n_heads = GATED_DEC_HEADS
 
-    # results from Gated Transformers
-    print(
-        "\n------------------------------------------------------------------------------------------"
-    )
-    print(
-        f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} \
-    decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
-    )
+#     # results from Gated Transformers
+#     print(
+#         "\n------------------------------------------------------------------------------------------"
+#     )
+#     print(
+#         f"\nThe gated Transformer has {gated_transformers_enc_n_heads} encoder head(s), {gated_transformers_dec_n_heads} \
+#     decoder head(s), {gated_transformers_enc_layers} encoder layer(s), {gated_transformers_dec_layers} decoder layer(s)"
+#     )
 
-    print("-----------------------------------------")
-    print("Traininng Gated Transformers Training Set")
-    print("-----------------------------------------")
-    (
-        gated_transformers_training_loss,
-        gated_transformers_validating_loss,
-        gated_transformers_training_PPL,
-        gated_transformers_validating_PPL,
-    ) = gated_transformers_main(
-        model=model,
-        train_iterator=train_iterator,
-        optimizer=optimizer,
-        criterion=criterion,
-        CLIP=CLIP,
-        valid_iterator=valid_iterator,
-        n_epochs=N_EPOCHS,
-    )
+#     print("-----------------------------------------")
+#     print("Traininng Gated Transformers Training Set")
+#     print("-----------------------------------------")
+#     (
+#         gated_transformers_training_loss,
+#         gated_transformers_validating_loss,
+#         gated_transformers_training_PPL,
+#         gated_transformers_validating_PPL,
+#     ) = gated_transformers_main(
+#         model=model,
+#         train_iterator=train_iterator,
+#         optimizer=optimizer,
+#         criterion=criterion,
+#         CLIP=CLIP,
+#         valid_iterator=valid_iterator,
+#         n_epochs=N_EPOCHS,
+#     )
 
-    print("----------------------------------------")
-    print("Traininng Gated Transformers Testing Set")
-    print("----------------------------------------")
-    (
-        gated_transformers_testing_loss,
-        gated_transformers_testing_PPL,
-    ) = test_gated_transformers_model(
-        model=model, test_iterator=test_iterator, criterion=criterion
-    )
+#     print("----------------------------------------")
+#     print("Traininng Gated Transformers Testing Set")
+#     print("----------------------------------------")
+#     (
+#         gated_transformers_testing_loss,
+#         gated_transformers_testing_PPL,
+#     ) = test_gated_transformers_model(
+#         model=model, test_iterator=test_iterator, criterion=criterion
+#     )
 
-    return (
-        gated_transformers_training_loss,
-        gated_transformers_validating_loss,
-        gated_transformers_training_PPL,
-        gated_transformers_validating_PPL,
-        gated_transformers_testing_loss,
-        gated_transformers_testing_PPL,
-    )
+#     return (
+#         gated_transformers_training_loss,
+#         gated_transformers_validating_loss,
+#         gated_transformers_training_PPL,
+#         gated_transformers_validating_PPL,
+#         gated_transformers_testing_loss,
+#         gated_transformers_testing_PPL,
+#     )
 
 
 ########################################################################
@@ -209,12 +209,12 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     INPUT_DIM = len(SRC.vocab)  # 7853
     OUTPUT_DIM = len(TRG.vocab)  # 5893
     HID_DIM = 256
-    ENC_LAYERS = 3
-    DEC_LAYERS = 3
+    ENC_LAYERS = 1
+    DEC_LAYERS = 1
     ENC_HEADS = 8
     DEC_HEADS = 8
-    ENC_PF_DIM = 512
-    DEC_PF_DIM = 512
+    ENC_PF_DIM = 256
+    DEC_PF_DIM = 256
     ENC_DROPOUT = 0.1
     DEC_DROPOUT = 0.1
 
@@ -325,15 +325,15 @@ def original_model_train() -> Tuple[float, float, float, float, float, float]:
     origin_transformers_testing_PPL,
 ) = original_model_train()
 
-# Run training Gated Transformers
-(
-    gated_transformers_training_loss,
-    gated_transformers_validating_loss,
-    gated_transformers_training_PPL,
-    gated_transformers_validating_PPL,
-    gated_transformers_testing_loss,
-    gated_transformers_testing_PPL,
-) = gated_model_train()
+# # Run training Gated Transformers
+# (
+#     gated_transformers_training_loss,
+#     gated_transformers_validating_loss,
+#     gated_transformers_training_PPL,
+#     gated_transformers_validating_PPL,
+#     gated_transformers_testing_loss,
+#     gated_transformers_testing_PPL,
+# ) = gated_model_train()
 
 
 class TestGatedTransformersTrainingSet:

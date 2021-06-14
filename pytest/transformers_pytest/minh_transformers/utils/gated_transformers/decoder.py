@@ -92,11 +92,15 @@ class DecoderLayers(nn.Module):
             # trg, attention = layer(trg, enc_src, trg_mask, src_mask)
             # trg, attention = layer(trg, enc_src)
             trg = layer(trg, enc_src)
+            # print(f"DECODER: size of processed target {trg.shape}")
 
+        trg = trg.permute(0, 2, 1)
+        # print(f"DECODER: size of processed target {trg.shape}")
 
         # output = [batch size, trg len, output dim]
-        print(f"DECODER: size of processed target {trg.shape}")
+        # print(f"DECODER: size of processed target {trg.shape}")
         output = self.fc_out(trg)
+        # print(f"DECODER: size of processed output {output.shape}")
 
         # return output, attention
         return output
@@ -251,18 +255,29 @@ class Decoder(nn.Module):
         torch.Tensor
             The decoded sequence
         """
+        # print(f"DECODER input target: {prev_seq.shape}\n")
+
         prev_seq_norm = self.auto_norm(prev_seq) # layer norm take in the target
+        # print(f"DECODER first norm {prev_seq_norm.shape}")
         prev_seq_attn = self.auto_attn(q_input=prev_seq_norm, kv_input=prev_seq_norm) # attention of the target
+        # print(f"DECODER attn {prev_seq_attn.shape}")
         prev_seq_gate = self.auto_gate(prev_seq, prev_seq_attn) # gate of the target
+        # print(f"DECODER first gate {prev_seq_gate.shape}\n")
 
         q_input = self.decoder_norm(prev_seq_gate) # layer normalize of the target
+        # print(f"DECODER Q Input {q_input.shape}")
         kv_input = self.encoder_norm(encoder_out) # # layer normalize of the encoder output
-
+        # print(f"DECODER KV Input {kv_input.shape}")
         attn_out = self.decoder_attn(q_input=q_input, kv_input=kv_input) # decoder attention output
         gate_out = self.first_gate(q_input, attn_out) # gating
+        # print(f"DECODER: attn 2 {attn_out.shape}")
+        # print(f"DECODER: gate 2 {gate_out.shape}\n")
 
         gate_norm = self.proj_norm(gate_out)
+        # print(f"DECODER norm 3 {gate_norm.shape}")
         proj_out = self.projection(gate_norm)
+        # print(f"DECODER projection {proj_out.shape}")
         proj_gate = self.second_gate(gate_out, proj_out)
+        # print(f"DECODER gate 3 {proj_gate.shape}\n")
 
         return proj_gate
