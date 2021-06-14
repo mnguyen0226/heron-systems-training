@@ -3,21 +3,21 @@ import torch
 import torch.nn as nn
 from utils.preprocess import run_preprocess, device
 
-from utils.gated_transformers.gated_training_utils import (
+from utils.alex_gated_transformers.gated_training_utils import ( 
     gated_transformers_main,
     test_gated_transformers_model,
     initialize_weights,
 )
-from utils.gated_transformers.gated_encoder import EncoderLayers  # encoder
-from utils.gated_transformers.gated_decoder import DecoderLayers  # decoder
-from utils.gated_transformers.gated_seq2seq import (
+from utils.alex_gated_transformers.gated_encoder import EncoderLayers 
+from utils.alex_gated_transformers.gated_decoder import DecoderLayers
+from utils.alex_gated_transformers.gated_seq2seq import (
     Seq2Seq,
     EmbeddingEncLayer,
     EmbeddingDecLayer,
 )
 
-
-def gated_model_train():
+##################################################################################################3
+def alex_gated_model_train():
     # initializer training iterator, SRC field, TRG field
     (
         train_iterator,
@@ -31,7 +31,7 @@ def gated_model_train():
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
     HID_DIM = 256
-    GATED_ENC_LAYERS = 1  # 3
+    GATED_ENC_LAYERS = 1 # 3 
     GATED_DEC_LAYERS = 1
     GATED_ENC_HEADS = 8
     GATED_DEC_HEADS = 8
@@ -150,4 +150,4 @@ def gated_model_train():
     gated_transformers_validating_PPL,
     gated_transformers_testing_loss,
     gated_transformers_testing_PPL,
-) = gated_model_train()
+) = alex_gated_model_train()
