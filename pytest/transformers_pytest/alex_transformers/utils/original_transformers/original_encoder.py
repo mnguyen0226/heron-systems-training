@@ -62,7 +62,7 @@ class Encoder(nn.Module):
         )
         self.dropout = nn.Dropout(dropout)
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(
-            device
+            self.device
         )  # sqrt(d_model). This is a hidden dim size.
 
     def forward(

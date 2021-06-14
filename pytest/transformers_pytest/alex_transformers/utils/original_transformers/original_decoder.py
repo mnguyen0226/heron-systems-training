@@ -4,8 +4,10 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from utils.original_transformers.encoder import MultiHeadAttentionLayer
-from utils.original_transformers.encoder import PositionwiseFeedforwardLayer
+from utils.original_transformers.original_encoder import (
+    MultiHeadAttentionLayer,
+    PositionwiseFeedforwardLayer,
+)
 
 
 class Decoder(nn.Module):

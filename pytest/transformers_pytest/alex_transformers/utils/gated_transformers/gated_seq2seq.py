@@ -1,19 +1,4 @@
-# Here is where we have to preprocess the data, get the right shape to Embedding, Encoder, Decoder as well as any additional layers for the output
-
-# We have to write extra function for to wrap
-
-# For Encoder
-# Create a class Embedding:
-# Tokenized and numerical Embedding layer
-
-# Dropout and scale will be used in the Seq2Seq class
-
-#######################################################
-# For Decoder
-# Create a class Embedding:
-# Tokenized and numerical Embedding layer
-
-# Dropout and scale will be used in the Seq2Seq class
+# script run the Seq2Seq of the Gated Transformers
 
 from typing import Tuple
 import torch
@@ -21,87 +6,136 @@ import torch.nn as nn
 from utils.preprocess import device
 
 
-class Embedding(nn.Module):
-    # this just encode the batch size, features
-
-    def __init__(
-        self, input_dim: int, hid_dim: int, dropout: float
-    ):  # these two are features
+class EmbeddingEncLayer(nn.Module):
+    def __init__(self, input_dim, hid_dim, dropout):
         super().__init__()
         self.tok_embedding = nn.Embedding(
             num_embeddings=input_dim, embedding_dim=hid_dim
         )
         self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
-
         self.dropout = nn.Dropout(dropout)
         self.scale = hid_dim ** 0.5
 
-    def forward(self, src):  # return the embedding source before the encoder layer
+    def forward(self, src):
         batch_size = src.shape[0]
         src_len = src.shape[1]
 
-        # positional vector. pos = [batch_size, src_len]
+        # positional vector
         pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
-        # src = [batch_size, src_len, hid_dim].
-        emb_src = self.dropout(
+        src = self.dropout(
             (self.tok_embedding(src) * self.scale) + self.pos_embedding(pos)
         )
 
-        return emb_src
+        return src
 
 
-class Seq2Seq(nn.Module):
-    def __init__(self, embedding, encoder, decoder, src_pad_idx, trg_pad_idx):
+class EmbeddingDecLayer(nn.Module):
+    def __init__(self, output_dim, hid_dim, dropout):
         super().__init__()
-        self.embedding = embedding
+        self.tok_embedding = nn.Embedding(
+            num_embeddings=output_dim, embedding_dim=hid_dim
+        )
+        self.pos_embedding = nn.Embedding(num_embeddings=100, embedding_dim=hid_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.scale = hid_dim ** 0.5
+
+    def forward(self, trg):
+        batch_size = trg.shape[0]
+        trg_len = trg.shape[1]
+
+        # positional vector
+        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(device)
+
+        trg = self.dropout(
+            (self.tok_embedding(trg) * self.scale) + self.pos_embedding(pos)
+        )
+
+        return trg
+
+
+class GatedSeq2Seq(nn.Module):
+    def __init__(
+        self,
+        embedding_enc: Tuple[int, int, float],
+        embedding_dec: Tuple[int, int, float],
+        encoder: Tuple[int, int, int, int, int, float, str],
+        decoder: Tuple[int, int, int, int, int, float, str],
+        src_pad_idx: Tuple[list, str, str, bool, bool],
+        trg_pad_idx: Tuple[list, str, str, bool, bool],
+    ):
+        """Seq2Seq encapsulates the encoder and decoder and handle the creation of masks (for src and trg)
+
+        Parameters
+        ----------
+        encoder: [input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, max_length]
+            the Encoder layer
+        decoder: [output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, max_length]
+            the Decoder layer
+        src_pad_idx:
+            type Field (preprocess.py)
+        trg_pad_idx:
+            type Field (preprocess.py)
+        """
+        super().__init__()
+        self.embedding_enc = embedding_enc
+        self.embedding_dec = embedding_dec
         self.encoder = encoder
         self.decoder = decoder
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
 
-    def make_src_mask(self, src):
-        # src = [batch size, src len]
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+    def forward(
+        self, src: Tuple[int, int], trg: Tuple[int, int]
+    ) -> Tuple[tuple, tuple]:
+        """Feed-forward function of the Seq2Seq
+
+        Parameters
+        ----------
+        src: [batch size, src len]
+            input source (to Encoder)
+        trg: [batch size, trg len]
+            output label (from Decoder)
+
+        Return
+        ----------
+        output: [batch size, trg len, output dim]
+            output prediction
+        attention: [batch size, n heads, trg len, src len]
+            we will not care about this in our case
+        """
+        # src_mask = self.make_src_mask(src)
+        # trg_mask = self.make_trg_mask(trg)
         # src_mask = [batch size, 1, 1, src len]
-
-        return src_mask
-
-    def make_trg_mask(self, trg):
-        # trg = [batch size, trg len]
-
-        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(2)
-        # trg_pad_mask = [batch size, 1, 1, trg len]
-
-        trg_len = trg.shape[1]
-
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=device)).bool()
-        # trg_sub_mask = [trg len, trg len]
-
-        trg_mask = trg_pad_mask & trg_sub_mask
         # trg_mask = [batch size, 1, trg len, trg len]
 
-        return trg_mask
+        embedding_src_enc = self.embedding_enc(src=src)  # B S F
 
-    def forward(self, src, trg):
-        src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        # print("SEQ2SEQ: Finish Embedding Encoder----------------------------- \n")
 
-        emb_src = self.embedding(src)  # src = [batch_size, src_len],
+        embedding_src_enc = embedding_src_enc.permute(0, 2, 1)  # B F S
+        # print(f"SEQ2SEQ: {embedding_src_enc.shape}")
 
-        # emb_src = [batch_size, sequence, features] = [batch, # word in a sentence, features = number of float]
-        print("TESTING Seq2Seq forward function")
-        print(src.shape)
-        print(emb_src.shape)
+        # enc_src = self.encoder(embedding_src_enc, src_mask)
+        enc_src = self.encoder(embedding_src_enc)
+        # enc_src = [batch size, src len, hid dim]
 
-        emb_src = emb_src.permute(0, 2, 1)
-        print(
-            emb_src.shape
-        )  # we want the shape to be similar to the one in the Encoder's forward function
+        # print("SEQ2SEQ: Finish Encoding----------------------------- \n")
 
-        # this will be changed. Some how could encode the src_mask and the trg_mask
-        enc_src = self.encoder(emb_src, src_mask)
+        embedding_trg_dec = self.embedding_dec(trg=trg)
+        embedding_trg_dec = embedding_trg_dec.permute(0, 2, 1)  # B F S
 
-        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        # print(f"SEQ2SEQ: {embedding_trg_dec.shape}")
+        # print("SEQ2SEQ: Finish Embedding Decoder----------------------------- \n")
 
-        return output, attention
+        # output, attention = self.decoder(embedding_trg_dec, enc_src)
+        output = self.decoder(embedding_trg_dec, enc_src)
+
+        # output = [batch size, trg len, output dim]
+        # attention = [batch size, n heads, trg len, src len]
+        # print(f"SEQ2SEQ output: {output.shape}")
+
+        # print("SEQ2SEQ: Finish Decoding----------------------------- \n")
+
+        # return output, attention
+        return output, 1

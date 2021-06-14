@@ -109,10 +109,6 @@ class Seq2Seq(nn.Module):
         # src = [batch size, src len]
         # trg = [batch size, trg len]
 
-        print("RUNNING the seq2seq")
-        print(f"The shape of the src original transformer is {src.shape}")
-        print(f"The shape of the trg original transformer is {trg.shape}")
-
         # src & trg mask allows the attention mechanism not pay attention to <pad>
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)

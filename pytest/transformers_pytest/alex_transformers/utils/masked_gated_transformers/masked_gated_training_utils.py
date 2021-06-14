@@ -22,7 +22,7 @@ def count_parameters(model: Tuple[tuple, tuple, tuple, tuple, str]) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def gated_initialize_weights(m: Tuple[tuple, tuple, tuple, tuple, str]):
+def masked_initialize_weights(m: Tuple[tuple, tuple, tuple, tuple, str]):
     """Xavier uniform initialization
 
     Parameters
@@ -167,7 +167,7 @@ def epoch_time(start_time: float, end_time: float) -> Tuple[int, int]:
     return elapsed_mins, elapsed_secs
 
 
-def gated_transformers_main(
+def masked_gated_transformers_main(
     model, train_iterator, optimizer, criterion, CLIP, valid_iterator, n_epochs
 ) -> Tuple[float, float, float, float]:
     """Run Training and Evaluating procedure
@@ -202,7 +202,7 @@ def gated_transformers_main(
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), "gated-tut6-model.pt")
+            torch.save(model.state_dict(), "masked-gated-tut6-model.pt")
 
         print(f"Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(
@@ -215,7 +215,7 @@ def gated_transformers_main(
     return train_loss, valid_loss, math.exp(train_loss), math.exp(valid_loss)
 
 
-def validate_gated_transformers_model(
+def validate_masked_gated_transformers_model(
     model, test_iterator, criterion
 ) -> Tuple[float, float]:
     """Tests the trained gated transformers model with testing dataset
@@ -228,7 +228,7 @@ def validate_gated_transformers_model(
         Testing PPL
     """
     model.load_state_dict(
-        torch.load("gated-tut6-model.pt", map_location=torch.device("cpu"))
+        torch.load("masked-gated-tut6-model.pt", map_location=torch.device("cpu"))
     )
 
     test_loss = evaluate(model, test_iterator, criterion)

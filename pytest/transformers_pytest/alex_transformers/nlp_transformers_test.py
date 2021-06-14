@@ -5,14 +5,14 @@ from utils.preprocess import run_preprocess, device
 from typing import Tuple
 
 # Import methods for Alex Gated Transformers
-from utils.alex_gated_transformers.gated_training_utils import (
+from utils.gated_transformers.gated_training_utils import (
     gated_transformers_main,
     validate_gated_transformers_model,
     gated_initialize_weights,
 )
-from utils.alex_gated_transformers.gated_encoder import EncoderLayers
-from utils.alex_gated_transformers.gated_decoder import DecoderLayers
-from utils.alex_gated_transformers.gated_seq2seq import (
+from utils.gated_transformers.gated_encoder_layers import EncoderLayers
+from utils.gated_transformers.gated_decoder_layers import DecoderLayers
+from utils.gated_transformers.gated_seq2seq import (
     GatedSeq2Seq,
     EmbeddingEncLayer,
     EmbeddingDecLayer,
@@ -406,16 +406,6 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
 
 
 ##################################################################################################
-# Run training Original Transformers
-(
-    origin_transformers_training_loss,
-    origin_transformers_validating_loss,
-    origin_transformers_training_PPL,
-    origin_transformers_validating_PPL,
-    origin_transformers_testing_loss,
-    origin_transformers_testing_PPL,
-) = original_model_train()
-
 # Run training Alex Gated Transformers
 (
     gated_transformers_training_loss,
@@ -425,6 +415,16 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
     gated_transformers_testing_loss,
     gated_transformers_testing_PPL,
 ) = alex_gated_model_train()
+
+# Run training Original Transformers
+(
+    origin_transformers_training_loss,
+    origin_transformers_validating_loss,
+    origin_transformers_training_PPL,
+    origin_transformers_validating_PPL,
+    origin_transformers_testing_loss,
+    origin_transformers_testing_PPL,
+) = original_model_train()
 
 # Run training Masked Gated Transformers
 (
