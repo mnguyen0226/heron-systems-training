@@ -184,7 +184,7 @@ def masked_gated_transformers_main(
         validating PPL
     """
     print(
-        f"The gated transformers model has {count_parameters(model):,} trainable parameters"
+        f"The masked gated transformers model has {count_parameters(model):,} trainable parameters"
     )
 
     best_valid_loss = float("inf")

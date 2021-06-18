@@ -406,16 +406,6 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
 
 
 ##################################################################################################
-# Run training Alex Gated Transformers
-(
-    gated_transformers_training_loss,
-    gated_transformers_validating_loss,
-    gated_transformers_training_PPL,
-    gated_transformers_validating_PPL,
-    gated_transformers_testing_loss,
-    gated_transformers_testing_PPL,
-) = alex_gated_model_train()
-
 # Run training Original Transformers
 (
     origin_transformers_training_loss,
@@ -425,6 +415,16 @@ def masked_model_train() -> Tuple[float, float, float, float, float, float]:
     origin_transformers_testing_loss,
     origin_transformers_testing_PPL,
 ) = original_model_train()
+
+# Run training Alex Gated Transformers
+(
+    gated_transformers_training_loss,
+    gated_transformers_validating_loss,
+    gated_transformers_training_PPL,
+    gated_transformers_validating_PPL,
+    gated_transformers_testing_loss,
+    gated_transformers_testing_PPL,
+) = alex_gated_model_train()
 
 # Run training Masked Gated Transformers
 (
