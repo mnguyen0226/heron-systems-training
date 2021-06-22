@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "Dockerfile.*": "dockerfile",
+        "stdexcept": "cpp",
+        "eigen": "cpp",
+        "numeric": "cpp",
+        "array": "cpp",
+        "optional": "cpp",
+        "sstream": "cpp",
+        "tuple": "cpp",
+        "cholesky": "cpp"
+    },
+    "cmake.configureOnOpen": true
+}
