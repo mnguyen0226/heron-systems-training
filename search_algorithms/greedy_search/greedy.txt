@@ -1,0 +1,12 @@
+# Greedy is a algorithmic paradigm that builds up a solution piece by piece, always choosing the 
+# next piece that offers the most obviose and immediate benefit.
+# For the problems where chooding locally optimal also leads to gloabal solution are best fit for Greedy
+
+Source:
+About Greedy Algorithms: https://skerritt.blog/greedy-algorithms/
+
+- Greedy Algorithms aim to make the optima choice at the given moment. Rach step it chooses the 
+optimal choice, without knowing the future.
+- It attepst to find the globally optimal way to solve the entire problem using this method
+- Greedy Property = At that exact moement in time, what is the optimal choice to make
+- This means that the overall optimal solution may differ from the solution the algorhsm choose
