@@ -1,1 +1,3 @@
 Search Algorithms in AI: https://www.geeksforgeeks.org/search-algorithms-in-ai/
+
+In AI, the agents perform some kind of search algorithm in the backgroun in order to achieve their task
