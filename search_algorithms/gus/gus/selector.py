@@ -23,7 +23,8 @@ class GeneralUniformSelector(object):
         self, constraints: List[Tuple[List, int]], seed: int = None,
     ):
         """
-        Suppose that we are given n available items that we can pick from. Let x_j denote
+        Suppose that we
+        e
         the number of unit j that we pick. Of course, x_j is non-negative and integral. A
         user may define m linear budget constraints which may be summarized as:
 
